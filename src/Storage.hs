@@ -18,8 +18,13 @@ import Data.ByteString
   ( ByteString
   )
 import Data.Aeson
-  ( ToJSON
-  , FromJSON
+  ( ToJSON(..)
+  , FromJSON(..)
+  , defaultOptions
+  , camelTo2
+  , genericToJSON
+  , genericParseJSON
+  , fieldLabelModifier
   )
 import GHC.Generics
   ( Generic
@@ -37,6 +42,10 @@ import Servant
   , (:<|>)
   )
 
+tahoeJSONOptions = defaultOptions
+  { fieldLabelModifier = camelTo2 '-'
+  }
+
 type ApplicationVersion = String
 type Size = Integer
 type Offset = Integer
@@ -47,11 +56,6 @@ type BucketIdentifier = String
 type StorageIndex = String
 type ShareData = String -- Should be ByteString but that breaks JSON
 
-data Version = Version
-  { applicationVersion :: ApplicationVersion
-  , parameters         :: Version1Parameters
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
-
 data Version1Parameters = Version1Parameters
   { maximumImmutableShareSize                 :: Size
   , maximumMutableShareSize                   :: Size
@@ -61,24 +65,50 @@ data Version1Parameters = Version1Parameters
   , fillsHolesWithZeroBytes                   :: Bool
   , preventsReadPastEndOfShareData            :: Bool
   , httpProtocolAvailable                     :: Bool
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON Version1Parameters where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON Version1Parameters where
+  parseJSON = genericParseJSON tahoeJSONOptions
+
+data Version = Version
+  { applicationVersion :: ApplicationVersion
+  , parameters         :: Version1Parameters
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON Version where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON Version where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data AllocateBuckets = AllocateBuckets
   { renewSecret       :: RenewSecret
   , cancelSecret      :: CancelSecret
   , shareNumbers      :: [ShareNumber]
   , allocatedSize     :: Size
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON AllocateBuckets where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON AllocateBuckets where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 type StorageBuckets = Map ShareNumber BucketIdentifier
-
--- instance ToJSON StorageBuckets
--- instance FromJSON StorageBuckets
 
 data AllocationResult = AllocationResult
   { alreadyHave       :: [ShareNumber]
   , allocated         :: StorageBuckets
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON AllocationResult where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON AllocationResult where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data ShareType =
   Mutable
@@ -89,7 +119,13 @@ data CorruptionDetails = CorruptionDetails
   { shareType         :: ShareType
   , storageIndex      :: StorageIndex
   , reason            :: String
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON CorruptionDetails where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON CorruptionDetails where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 type StorageAPI =
   -- General server information
