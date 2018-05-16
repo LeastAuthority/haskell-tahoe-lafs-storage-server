@@ -5,8 +5,20 @@
 
 module Storage
   ( Version(..)
+  , StorageIndex
+  , BucketIdentifier
+  , StorageBuckets
+  , ShareData
+  , ShareDataBS
   , ApplicationVersion(..)
   , Version1Parameters(..)
+  , AllocateBuckets(..)
+  , AllocationResult(..)
+  , ReadTestWriteVectors
+  , ReadTestWriteResult(..)
+  , ReadVectors
+  , ReadResult
+  , CorruptionDetails
   , StorageAPI
   , api
   ) where
@@ -55,6 +67,7 @@ type CancelSecret = String
 type BucketIdentifier = String
 type StorageIndex = String
 type ShareData = String -- Should be ByteString but that breaks JSON
+type ShareDataBS = ByteString -- Should be the same as ShareData
 
 data Version1Parameters = Version1Parameters
   { maximumImmutableShareSize                 :: Size
@@ -131,35 +144,49 @@ type StorageAPI =
   -- General server information
   "v1" :> "version" :> Get '[JSON] Version
 
-  -- -- Share interactions
-  -- -- Allocate buckets for share writing
-  -- :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] AllocateBuckets :> Post '[JSON] AllocationResult
-  -- -- Retrieve the bucket identifiers for a storage index
-  -- :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[JSON] StorageBuckets
+  -- Share interactions
+  -- Allocate buckets for share writing
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] AllocateBuckets :> Post '[JSON] AllocationResult
+  -- Retrieve the bucket identifiers for a storage index
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[JSON] StorageBuckets
 
-  -- -- Write share data to an allocated bucket
-  -- :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Put '[JSON] ()
-  -- -- Read share data from a previously written bucket
-  -- :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareData
-  -- -- Advise the server of a corrupt bucket contents
-  -- :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[JSON] CorruptionDetails :> Post '[JSON] ()
+  -- Write share data to an allocated bucket
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareDataBS :> Put '[JSON] ()
+  -- Read share data from a previously written bucket
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareDataBS
+  -- Advise the server of a corrupt bucket contents
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[JSON] CorruptionDetails :> Post '[JSON] ()
 
-  -- -- Slot interactions
-  -- -- Write to a slot
-  -- :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] ReadTestWriteVectors :> Post '[JSON] ReadTestWriteResult
+  -- Slot interactions
+  -- Write to a slot
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] ReadTestWriteVectors :> Post '[JSON] ReadTestWriteResult
+  -- Read from a slot
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] ReadVectors :> Post '[JSON] ReadResult
+
+type ReadResult = Map ShareNumber [ShareData]
+
+data ReadVectors = ReadVectors
+  { shares      :: [ShareNumber]
+  , readVectors :: [ReadVector]
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON ReadVectors where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON ReadVectors where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data ReadTestWriteResult = ReadTestWriteResult
   { success  :: Bool
-  , readData :: Map ShareNumber [ShareData]
+  , readData :: ReadResult
   } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data ReadTestWriteVectors = ReadTestWriteVectors
   { secrets          :: SlotSecrets
   , testWriteVectors :: Map ShareNumber TestWriteVectors
-  , readVector       :: ReadVectors
+  , readVector       :: [ReadVector]
   } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
-type ReadVectors = [ReadVector]
 data ReadVector = ReadVector
   { offset     :: Offset
   , readSize   :: Size

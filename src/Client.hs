@@ -1,12 +1,13 @@
 module Client
-  ( version
-  -- , allocateBuckets
-  -- , getBuckets
-  -- , writeToBucket
-  -- , readFromBucket
-  -- , adviseCorruptBucket
-  -- , testvAndReadvAndWritev
-  -- , readv
+  (
+    version
+  , allocateBuckets
+  , getBuckets
+  , writeToBucket
+  , readFromBucket
+  , adviseCorruptBucket
+  , testvAndReadvAndWritev
+  , readv
   ) where
 
 import Servant
@@ -21,11 +22,11 @@ import Storage
   )
 
 (version
- -- :<|> allocateBuckets
- -- :<|> getBuckets
- -- :<|> writeToBucket
- -- :<|> readFromBucket
- -- :<|> adviseCorruptBucket
- -- :<|> testvAndReadvAndWritev
- -- :<|> readv
+ :<|> allocateBuckets
+ :<|> getBuckets
+ :<|> writeToBucket
+ :<|> readFromBucket
+ :<|> adviseCorruptBucket
+ :<|> testvAndReadvAndWritev
+ :<|> readv
   ) = client api
