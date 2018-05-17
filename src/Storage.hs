@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- https://artyom.me/aeson#records-and-json-generics
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
@@ -46,11 +48,24 @@ import Servant
   , OctetStream
   , Capture
   , ReqBody
+  , Header
   , Get
   , Post
   , Put
   , (:>)
   , (:<|>)
+  )
+
+import Web.HttpApiData
+  ( FromHttpApiData(parseHeader)
+  , ToHttpApiData(toHeader)
+  )
+
+import Network.HTTP.Types
+  ( ByteRange
+  , ByteRanges
+  , parseByteRanges
+  , renderByteRanges
   )
 
 import ServantUtil
@@ -142,6 +157,15 @@ instance ToJSON CorruptionDetails where
 instance FromJSON CorruptionDetails where
   parseJSON = genericParseJSON tahoeJSONOptions
 
+instance FromHttpApiData ByteRanges where
+  parseHeader bs =
+    case parseByteRanges bs of
+      Nothing -> Left "parse failed"
+      Just br -> Right br
+
+instance ToHttpApiData ByteRanges where
+  toHeader = renderByteRanges
+
 type StorageAPI =
   -- General server information
   "v1" :> "version" :> Get '[CBOR, JSON] Version
@@ -153,7 +177,7 @@ type StorageAPI =
   :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[CBOR, JSON] StorageBuckets
 
   -- Write share data to an allocated bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Put '[CBOR, JSON] ()
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> Put '[CBOR, JSON] ()
   -- Read share data from a previously written bucket
   :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareData
   -- Advise the server of a corrupt bucket contents

@@ -31,6 +31,8 @@ library
                      , cborg-json
                      , http-media
                      , serialise
+                     , http-api-data
+                     , http-types
                      , servant-server
                      , servant-client
                      , wai

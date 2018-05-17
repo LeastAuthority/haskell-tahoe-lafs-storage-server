@@ -30,6 +30,11 @@ import Servant
   , serve
   )
 
+import Network.HTTP.Types
+  ( ByteRange
+  , ByteRanges
+  )
+
 import Network.Wai
   ( Application
   )
@@ -66,8 +71,9 @@ allocateBuckets storage_index params =
 getBuckets :: StorageIndex -> Handler StorageBuckets
 getBuckets storage_index = return mempty
 
-writeToBucket :: BucketIdentifier -> ShareData -> Handler ()
-writeToBucket bucket_id share_data = return ()
+writeToBucket :: BucketIdentifier -> ShareData -> Maybe ByteRanges -> Handler ()
+writeToBucket bucket_id share_data ranges = do
+  return ()
 
 readFromBucket :: BucketIdentifier -> Handler ShareData
 readFromBucket bucket_id = return mempty
