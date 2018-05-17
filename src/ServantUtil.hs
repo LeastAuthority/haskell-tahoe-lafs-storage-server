@@ -10,6 +10,25 @@ import Network.HTTP.Media
   ( (//)
   )
 
+import Data.ByteString
+  ( ByteString
+  )
+
+import Data.ByteString.Base64
+  ( encode
+  , decode
+  )
+
+import Data.Text.Encoding
+  ( decodeUtf8
+  , encodeUtf8
+  )
+
+import Data.ByteString.UTF8
+  ( toString
+  , fromString
+  )
+
 import Servant
   ( Accept(..)
   , MimeRender(..)
@@ -18,12 +37,14 @@ import Servant
 
 import Data.Aeson
   ( ToJSON(toJSON)
-  , FromJSON
+  , FromJSON(parseJSON)
+  , withText
   )
 import Data.Aeson.Types
   ( Parser
   , Result(Error, Success)
   , fromJSON
+  , Value(String)
   )
 
 import Codec.CBOR.Write
@@ -57,3 +78,15 @@ instance FromJSON a => MimeUnrender CBOR a where
           Success x -> Right x
       Right (extra, _) -> Left "extra bytes at tail"
       Left err         -> Left $ show err
+
+
+instance ToJSON ByteString where
+  toJSON bs = String $ decodeUtf8 $ encode bs
+
+instance FromJSON ByteString where
+  parseJSON = withText "String" (
+    \bs ->
+      case decode $ encodeUtf8 bs of
+        Left err    -> fail ("Base64 decoding failed: " ++ err)
+        Right bytes -> return bytes
+    )

@@ -23,10 +23,14 @@ library
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , bytestring
+                     , base64-bytestring
+                     , text
+                     , utf8-string
                      , aeson
                      , cborg
                      , cborg-json
                      , http-media
+                     , serialise
                      , servant-server
                      , servant-client
                      , wai

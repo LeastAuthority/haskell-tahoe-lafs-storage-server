@@ -42,6 +42,7 @@ import GHC.Generics
   )
 import Servant
   ( Proxy(Proxy)
+  , JSON
   , OctetStream
   , Capture
   , ReqBody
@@ -143,26 +144,26 @@ instance FromJSON CorruptionDetails where
 
 type StorageAPI =
   -- General server information
-  "v1" :> "version" :> Get '[CBOR] Version
+  "v1" :> "version" :> Get '[CBOR, JSON] Version
 
   -- Share interactions
   -- Allocate buckets for share writing
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] AllocateBuckets :> Post '[CBOR] AllocationResult
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> Post '[CBOR, JSON] AllocationResult
   -- Retrieve the bucket identifiers for a storage index
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[CBOR] StorageBuckets
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[CBOR, JSON] StorageBuckets
 
   -- Write share data to an allocated bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Put '[CBOR] ()
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Put '[CBOR, JSON] ()
   -- Read share data from a previously written bucket
   :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareData
   -- Advise the server of a corrupt bucket contents
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[CBOR] CorruptionDetails :> Post '[CBOR] ()
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[CBOR, JSON] CorruptionDetails :> Post '[CBOR, JSON] ()
 
   -- Slot interactions
   -- Write to a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] ReadTestWriteVectors :> Post '[CBOR] ReadTestWriteResult
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] ReadTestWriteVectors :> Post '[CBOR, JSON] ReadTestWriteResult
   -- Read from a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] ReadVectors :> Post '[CBOR] ReadResult
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] ReadVectors :> Post '[CBOR, JSON] ReadResult
 
 type ReadResult = Map ShareNumber [ShareData]
 
@@ -180,18 +181,36 @@ instance FromJSON ReadVectors where
 data ReadTestWriteResult = ReadTestWriteResult
   { success  :: Bool
   , readData :: ReadResult
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON ReadTestWriteResult where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON ReadTestWriteResult where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data ReadTestWriteVectors = ReadTestWriteVectors
   { secrets          :: SlotSecrets
   , testWriteVectors :: Map ShareNumber TestWriteVectors
   , readVector       :: [ReadVector]
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON ReadTestWriteVectors where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON ReadTestWriteVectors where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data ReadVector = ReadVector
   { offset     :: Offset
   , readSize   :: Size
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON ReadVector where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON ReadVector where
+  parseJSON = genericParseJSON tahoeJSONOptions
 
 data TestWriteVectors = TestWriteVectors
   { test  :: [TestVector]
@@ -223,7 +242,14 @@ data SlotSecrets = SlotSecrets
   { writeEnabler :: WriteEnablerSecret
   , leaseRenew   :: LeaseRenewSecret
   , leaseCancel  :: LeaseCancelSecret
-  } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON SlotSecrets where
+  toJSON = genericToJSON tahoeJSONOptions
+
+instance FromJSON SlotSecrets where
+  parseJSON = genericParseJSON tahoeJSONOptions
+
 
 type WriteEnablerSecret = String
 type LeaseRenewSecret = String
