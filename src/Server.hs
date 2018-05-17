@@ -10,7 +10,6 @@ import Storage
   , BucketIdentifier
   , StorageBuckets
   , ShareData
-  , ShareDataBS
   , ApplicationVersion(..)
   , Version1Parameters(..)
   , AllocateBuckets
@@ -67,10 +66,10 @@ allocateBuckets storage_index params =
 getBuckets :: StorageIndex -> Handler StorageBuckets
 getBuckets storage_index = return mempty
 
-writeToBucket :: BucketIdentifier -> ShareDataBS -> Handler ()
+writeToBucket :: BucketIdentifier -> ShareData -> Handler ()
 writeToBucket bucket_id share_data = return ()
 
-readFromBucket :: BucketIdentifier -> Handler ShareDataBS
+readFromBucket :: BucketIdentifier -> Handler ShareData
 readFromBucket bucket_id = return mempty
 
 adviseCorruptBucket :: BucketIdentifier -> CorruptionDetails -> Handler ()

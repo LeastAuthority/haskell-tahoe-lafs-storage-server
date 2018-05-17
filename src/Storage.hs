@@ -9,7 +9,6 @@ module Storage
   , BucketIdentifier
   , StorageBuckets
   , ShareData
-  , ShareDataBS
   , ApplicationVersion(..)
   , Version1Parameters(..)
   , AllocateBuckets(..)
@@ -43,7 +42,6 @@ import GHC.Generics
   )
 import Servant
   ( Proxy(Proxy)
-  , JSON
   , OctetStream
   , Capture
   , ReqBody
@@ -52,6 +50,10 @@ import Servant
   , Put
   , (:>)
   , (:<|>)
+  )
+
+import ServantUtil
+  ( CBOR
   )
 
 tahoeJSONOptions = defaultOptions
@@ -66,8 +68,7 @@ type RenewSecret = String
 type CancelSecret = String
 type BucketIdentifier = String
 type StorageIndex = String
-type ShareData = String -- Should be ByteString but that breaks JSON
-type ShareDataBS = ByteString -- Should be the same as ShareData
+type ShareData = ByteString
 
 data Version1Parameters = Version1Parameters
   { maximumImmutableShareSize                 :: Size
@@ -142,26 +143,26 @@ instance FromJSON CorruptionDetails where
 
 type StorageAPI =
   -- General server information
-  "v1" :> "version" :> Get '[JSON] Version
+  "v1" :> "version" :> Get '[CBOR] Version
 
   -- Share interactions
   -- Allocate buckets for share writing
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] AllocateBuckets :> Post '[JSON] AllocationResult
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] AllocateBuckets :> Post '[CBOR] AllocationResult
   -- Retrieve the bucket identifiers for a storage index
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[JSON] StorageBuckets
+  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[CBOR] StorageBuckets
 
   -- Write share data to an allocated bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareDataBS :> Put '[JSON] ()
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Put '[CBOR] ()
   -- Read share data from a previously written bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareDataBS
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareData
   -- Advise the server of a corrupt bucket contents
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[JSON] CorruptionDetails :> Post '[JSON] ()
+  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[CBOR] CorruptionDetails :> Post '[CBOR] ()
 
   -- Slot interactions
   -- Write to a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] ReadTestWriteVectors :> Post '[JSON] ReadTestWriteResult
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] ReadTestWriteVectors :> Post '[CBOR] ReadTestWriteResult
   -- Read from a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[JSON] ReadVectors :> Post '[JSON] ReadResult
+  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR] ReadVectors :> Post '[CBOR] ReadResult
 
 type ReadResult = Map ShareNumber [ShareData]
 

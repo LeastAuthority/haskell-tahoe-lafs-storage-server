@@ -18,11 +18,15 @@ library
   exposed-modules:     Storage
                      , Server
                      , Client
+  other-modules:       ServantUtil
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , bytestring
                      , aeson
+                     , cborg
+                     , cborg-json
+                     , http-media
                      , servant-server
                      , servant-client
                      , wai
