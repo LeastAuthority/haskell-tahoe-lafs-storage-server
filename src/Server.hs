@@ -6,9 +6,10 @@ module Server
 
 import Storage
   ( Version(..)
+  , Size
+  , Offset
   , StorageIndex
-  , BucketIdentifier
-  , StorageBuckets
+  , ShareNumber
   , ShareData
   , ApplicationVersion(..)
   , Version1Parameters(..)
@@ -61,45 +62,57 @@ versionInfo = Version
 version :: Handler Version
 version = return versionInfo
 
-allocateBuckets :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
-allocateBuckets storage_index params =
+createImmutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
+createImmutableStorageIndex storage_index params =
   return AllocationResult
-  { alreadyHave = []
+  { alreadyHave = mempty
   , allocated = mempty
   }
 
-getBuckets :: StorageIndex -> Handler StorageBuckets
-getBuckets storage_index = return mempty
+writeImmutableShare :: StorageIndex -> ShareNumber -> ShareData -> Maybe ByteRanges -> Handler ()
+writeImmutableShare storage_index share_number share_data content_ranges = return mempty
 
-writeToBucket :: BucketIdentifier -> ShareData -> Maybe ByteRanges -> Handler ()
-writeToBucket bucket_id share_data ranges = do
-  return ()
+adviseCorruptImmutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
+adviseCorruptImmutableShare storage_index share_number details = return ()
 
-readFromBucket :: BucketIdentifier -> Handler ShareData
-readFromBucket bucket_id = return mempty
+getImmutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
+getImmutableShareNumbers storage_index = return mempty
 
-adviseCorruptBucket :: BucketIdentifier -> CorruptionDetails -> Handler ()
-adviseCorruptBucket bucket_id details = return ()
+readImmutableShares :: StorageIndex -> [ShareNumber] -> Maybe ByteRanges -> Handler ReadResult
+readImmutableShares storage_index share_numbers content_ranges = return mempty
 
-testvAndReadvAndWritev :: StorageIndex -> ReadTestWriteVectors -> Handler ReadTestWriteResult
-testvAndReadvAndWritev storage_index vectors =
+createMutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
+createMutableStorageIndex = createImmutableStorageIndex
+
+readvAndTestvAndWritev :: StorageIndex -> ReadTestWriteVectors -> Handler ReadTestWriteResult
+readvAndTestvAndWritev storage_index vectors =
   return ReadTestWriteResult
   { success = False
   , readData = mempty
   }
 
-readv :: StorageIndex -> ReadVectors -> Handler ReadResult
-readv storage_index vectors = return mempty
+readMutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> ReadVectors -> Handler ReadResult
+readMutableShares storage_index share_numbers offsets sizes read_vectors = return mempty
+
+getMutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
+getMutableShareNumbers storage_index = return mempty
+
+adviseCorruptMutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
+adviseCorruptMutableShare storage_index share_number details = return ()
 
 storageServer :: Server StorageAPI
 storageServer = version
-  :<|> allocateBuckets
-  :<|> getBuckets
-  :<|> writeToBucket
-  :<|> readFromBucket
-  :<|> adviseCorruptBucket
-  :<|> testvAndReadvAndWritev
-  :<|> readv
+  :<|> createImmutableStorageIndex
+  :<|> writeImmutableShare
+  :<|> adviseCorruptImmutableShare
+  :<|> getImmutableShareNumbers
+  :<|> readImmutableShares
+  :<|> createMutableStorageIndex
+  :<|> readvAndTestvAndWritev
+  :<|> readMutableShares
+  :<|> getMutableShareNumbers
+  :<|> adviseCorruptMutableShare
+
 
 storageApp :: Application
 storageApp = serve api storageServer

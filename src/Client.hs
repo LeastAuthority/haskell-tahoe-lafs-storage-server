@@ -22,11 +22,14 @@ import Storage
   )
 
 (version
- :<|> allocateBuckets
- :<|> getBuckets
- :<|> writeToBucket
- :<|> readFromBucket
- :<|> adviseCorruptBucket
- :<|> testvAndReadvAndWritev
- :<|> readv
+  :<|> createImmutableStorageIndex
+  :<|> writeImmutableShare
+  :<|> adviseCorruptImmutableShare
+  :<|> getImmutableShareNumbers
+  :<|> readImmutableShares
+  :<|> createMutableStorageIndex
+  :<|> readvAndTestvAndWritev
+  :<|> readMutableShares
+  :<|> getMutableShareNumbers
+  :<|> adviseCorruptMutableShare
   ) = client api

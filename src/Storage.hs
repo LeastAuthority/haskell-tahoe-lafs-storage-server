@@ -7,9 +7,10 @@
 
 module Storage
   ( Version(..)
+  , Size
+  , Offset
   , StorageIndex
-  , BucketIdentifier
-  , StorageBuckets
+  , ShareNumber
   , ShareData
   , ApplicationVersion(..)
   , Version1Parameters(..)
@@ -47,6 +48,7 @@ import Servant
   , JSON
   , OctetStream
   , Capture
+  , QueryParams
   , ReqBody
   , Header
   , Get
@@ -82,7 +84,6 @@ type Offset = Integer
 type ShareNumber = Integer
 type RenewSecret = String
 type CancelSecret = String
-type BucketIdentifier = String
 type StorageIndex = String
 type ShareData = ByteString
 
@@ -127,11 +128,9 @@ instance ToJSON AllocateBuckets where
 instance FromJSON AllocateBuckets where
   parseJSON = genericParseJSON tahoeJSONOptions
 
-type StorageBuckets = Map ShareNumber BucketIdentifier
-
 data AllocationResult = AllocationResult
   { alreadyHave       :: [ShareNumber]
-  , allocated         :: StorageBuckets
+  , allocated         :: [ShareNumber]
   } deriving (Show, Eq, Generic)
 
 instance ToJSON AllocationResult where
@@ -146,9 +145,7 @@ data ShareType =
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data CorruptionDetails = CorruptionDetails
-  { shareType         :: ShareType
-  , storageIndex      :: StorageIndex
-  , reason            :: String
+  { reason            :: String
   } deriving (Show, Eq, Generic)
 
 instance ToJSON CorruptionDetails where
@@ -168,26 +165,65 @@ instance ToHttpApiData ByteRanges where
 
 type StorageAPI =
   -- General server information
+
+  --
+  -- GET /v1/version
+  -- Retrieve information about the server version and behavior
   "v1" :> "version" :> Get '[CBOR, JSON] Version
 
-  -- Share interactions
-  -- Allocate buckets for share writing
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> Post '[CBOR, JSON] AllocationResult
-  -- Retrieve the bucket identifiers for a storage index
-  :<|> "v1" :> "storage" :> Capture "storage_index" StorageIndex :> Get '[CBOR, JSON] StorageBuckets
+  -- Immutable share interactions
 
-  -- Write share data to an allocated bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> Put '[CBOR, JSON] ()
-  -- Read share data from a previously written bucket
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> Get '[OctetStream] ShareData
-  -- Advise the server of a corrupt bucket contents
-  :<|> "v1" :> "buckets" :> Capture "bucket_id" BucketIdentifier :> "corrupt" :> ReqBody '[CBOR, JSON] CorruptionDetails :> Post '[CBOR, JSON] ()
+  --
+  -- POST /v1/immutable/:storage_index
+  -- Initialize a new immutable storage index
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> Post '[CBOR, JSON] AllocationResult
 
-  -- Slot interactions
-  -- Write to a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] ReadTestWriteVectors :> Post '[CBOR, JSON] ReadTestWriteResult
-  -- Read from a slot
-  :<|> "v1" :> "slots" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] ReadVectors :> Post '[CBOR, JSON] ReadResult
+  --
+  -- PUT /v1/immutable/:storage_index/:share_number
+  -- Write data for an immutable share to an allocated storage index
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> Put '[CBOR, JSON] ()
+
+  --
+  -- POST /v1/immutable/:storage_index/:share_number/corrupt
+  -- Advise the server of a corrupt share data
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> "corrupt" :> ReqBody '[CBOR, JSON] CorruptionDetails :> Post '[CBOR, JSON] ()
+
+  --
+  -- GET /v1/immutable/storage_index/shares
+  -- Retrieve the share numbers available for a storage index
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> "shares" :> Get '[CBOR, JSON] [ShareNumber]
+
+  --
+  -- GET /v1/immutable/:storage_index?[share=s0&share=s1&...]
+  -- Read from an immutable storage index, possibly from multiple shares, possibly limited to certain ranges
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> Header "Range" ByteRanges :> Get '[CBOR] ReadResult
+
+  -- Mutable share interactions
+
+  --
+  -- POST /v1/mutable/:storage_index
+  -- Initialize a new mutable storage index
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> Post '[CBOR, JSON] AllocationResult
+
+  --
+  -- POST /v1/mutable/:storage_index/read-test-write
+  -- General purpose read-test-and-write operation.
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> "read-test-write" :> ReqBody '[CBOR, JSON] ReadTestWriteVectors :> Post '[CBOR, JSON] ReadTestWriteResult
+
+  --
+  -- GET /v1/mutable/:storage_index
+  -- Read from a mutable storage index
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> ReqBody '[CBOR, JSON] ReadVectors :> Get '[CBOR, JSON] ReadResult
+
+  --
+  -- GET /v1/mutable/:storage_index/shares
+  -- Retrieve the share numbers available for a storage index
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> "shares" :> Get '[CBOR, JSON] [ShareNumber]
+
+  --
+  -- POST /v1/mutable/:storage_index/:share_number/corrupt
+  -- Advise the server of a corrupt share data
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> "corrupt" :> ReqBody '[CBOR, JSON] CorruptionDetails :> Post '[CBOR, JSON] ()
 
 type ReadResult = Map ShareNumber [ShareData]
 
