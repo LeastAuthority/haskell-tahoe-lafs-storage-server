@@ -1,13 +1,15 @@
 module Client
-  (
-    version
-  , allocateBuckets
-  , getBuckets
-  , writeToBucket
-  , readFromBucket
-  , adviseCorruptBucket
-  , testvAndReadvAndWritev
-  , readv
+  ( version
+  , createImmutableStorageIndex
+  , writeImmutableShare
+  , adviseCorruptImmutableShare
+  , getImmutableShareNumbers
+  , readImmutableShares
+  , createMutableStorageIndex
+  , readvAndTestvAndWritev
+  , readMutableShares
+  , getMutableShareNumbers
+  , adviseCorruptMutableShare
   ) where
 
 import Servant
