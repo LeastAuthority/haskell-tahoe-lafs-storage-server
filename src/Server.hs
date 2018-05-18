@@ -110,8 +110,8 @@ readvAndTestvAndWritev storage_index vectors =
   , readData = mempty
   }
 
-readMutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> ReadVectors -> Handler ReadResult
-readMutableShares storage_index share_numbers offsets sizes read_vectors = return mempty
+readMutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
+readMutableShares storage_index share_numbers offsets sizes = return mempty
 
 getMutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
 getMutableShareNumbers storage_index = return mempty

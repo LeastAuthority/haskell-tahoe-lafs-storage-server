@@ -213,7 +213,7 @@ type StorageAPI =
   --
   -- GET /v1/mutable/:storage_index
   -- Read from a mutable storage index
-  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> ReqBody '[CBOR, JSON] ReadVectors :> Get '[CBOR, JSON] ReadResult
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR, JSON] ReadResult
 
   --
   -- GET /v1/mutable/:storage_index/shares
