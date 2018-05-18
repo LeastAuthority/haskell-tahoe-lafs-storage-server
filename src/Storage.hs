@@ -196,7 +196,7 @@ type StorageAPI =
   --
   -- GET /v1/immutable/:storage_index?[share=s0&share=s1&...]
   -- Read from an immutable storage index, possibly from multiple shares, possibly limited to certain ranges
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> Header "Range" ByteRanges :> Get '[CBOR] ReadResult
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR] ReadResult
 
   -- Mutable share interactions
 

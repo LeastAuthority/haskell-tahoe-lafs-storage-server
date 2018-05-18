@@ -97,8 +97,8 @@ adviseCorruptImmutableShare storage_index share_number details = return ()
 getImmutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
 getImmutableShareNumbers storage_index = return mempty
 
-readImmutableShares :: StorageIndex -> [ShareNumber] -> Maybe ByteRanges -> Handler ReadResult
-readImmutableShares storage_index share_numbers content_ranges = return mempty
+readImmutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
+readImmutableShares storage_index share_numbers = return mempty
 
 createMutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
 createMutableStorageIndex = createImmutableStorageIndex
