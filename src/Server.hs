@@ -1,8 +1,11 @@
 module Server
-  ( storageServer
-  , storageApp
-  , main
+  ( main
+  , versionString
   ) where
+
+import Control.Monad.IO.Class
+  ( liftIO
+  )
 
 import Storage
   ( Version(..)
@@ -31,6 +34,15 @@ import Servant
   , serve
   )
 
+import System.Posix.StatVFS
+  ( StatVFS(statVFS_bsize, statVFS_bavail)
+  , statVFS
+  )
+
+import System.IO
+  ( FilePath
+  )
+
 import Network.HTTP.Types
   ( ByteRange
   , ByteRanges
@@ -43,24 +55,31 @@ import Network.Wai.Handler.Warp
   ( run
   )
 
-versionInfo :: Version
-versionInfo = Version
-  { applicationVersion = "0.1.0"
-  , parameters =
-    Version1Parameters
-    { maximumImmutableShareSize = 2 ^ 16
-    , maximumMutableShareSize = 2 ^ 16
-    , availableSpace = 2 ^ 32
-    , toleratesImmutableReadOverrun = True
-    , deleteMutableSharesWithZeroLengthWritev = True
-    , fillsHolesWithZeroBytes = True
-    , preventsReadPastEndOfShareData = True
-    , httpProtocolAvailable = True
-    }
-  }
+versionString = "tahoe-lafhs 0.1.0"
 
-version :: Handler Version
-version = return versionInfo
+-- Copied from the Python implementation.  Kind of arbitrary.
+maxMutableShareSize = 69105 * 1000 * 1000 * 1000 * 1000
+
+version :: FilePath -> Handler Version
+version storage = do
+  vfs <- liftIO $ statVFS storage
+  let available = (toInteger $ statVFS_bsize vfs) * (toInteger $ statVFS_bavail vfs)
+  return Version
+    { applicationVersion = versionString
+    , parameters =
+        Version1Parameters
+        { maximumImmutableShareSize = available
+        , maximumMutableShareSize = maxMutableShareSize
+        -- TODO: Copy the "reserved space" feature of the Python
+        -- implementation.
+        , availableSpace = available
+        , toleratesImmutableReadOverrun = True
+        , deleteMutableSharesWithZeroLengthWritev = True
+        , fillsHolesWithZeroBytes = True
+        , preventsReadPastEndOfShareData = True
+        , httpProtocolAvailable = True
+        }
+    }
 
 createImmutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
 createImmutableStorageIndex storage_index params =
@@ -100,22 +119,19 @@ getMutableShareNumbers storage_index = return mempty
 adviseCorruptMutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
 adviseCorruptMutableShare storage_index share_number details = return ()
 
-storageServer :: Server StorageAPI
-storageServer = version
-  :<|> createImmutableStorageIndex
-  :<|> writeImmutableShare
-  :<|> adviseCorruptImmutableShare
-  :<|> getImmutableShareNumbers
-  :<|> readImmutableShares
-  :<|> createMutableStorageIndex
-  :<|> readvAndTestvAndWritev
-  :<|> readMutableShares
-  :<|> getMutableShareNumbers
-  :<|> adviseCorruptMutableShare
-
-
-storageApp :: Application
-storageApp = serve api storageServer
-
-main :: IO ()
-main = run 8081 storageApp
+main :: FilePath -> IO ()
+main storage = do
+  run 8081 (serve api storageServer)
+  where
+    storageServer :: Server StorageAPI
+    storageServer = version storage
+      :<|> createImmutableStorageIndex
+      :<|> writeImmutableShare
+      :<|> adviseCorruptImmutableShare
+      :<|> getImmutableShareNumbers
+      :<|> readImmutableShares
+      :<|> createMutableStorageIndex
+      :<|> readvAndTestvAndWritev
+      :<|> readMutableShares
+      :<|> getMutableShareNumbers
+      :<|> adviseCorruptMutableShare
