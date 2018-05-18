@@ -218,7 +218,7 @@ type StorageAPI =
   --
   -- GET /v1/mutable/:storage_index/shares
   -- Retrieve the share numbers available for a storage index
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> "shares" :> Get '[CBOR, JSON] [ShareNumber]
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> "shares" :> Get '[CBOR, JSON] [ShareNumber]
 
   --
   -- POST /v1/mutable/:storage_index/:share_number/corrupt
