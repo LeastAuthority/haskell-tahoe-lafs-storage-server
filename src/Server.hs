@@ -1,7 +1,6 @@
 module Server
   ( StorageServerConfig(StorageServerConfig)
   , main
-  , versionString
   ) where
 
 import Control.Monad.IO.Class
@@ -33,16 +32,16 @@ import Storage
   , api
   )
 
+import qualified Backend
+import FilesystemBackend
+  ( FilesystemBackend(FilesystemBackend)
+  )
+
 import Servant
   ( (:<|>)(..)
   , Server
   , Handler(Handler)
   , serve
-  )
-
-import System.Posix.StatVFS
-  ( StatVFS(statVFS_bsize, statVFS_bavail)
-  , statVFS
   )
 
 import System.IO
@@ -71,70 +70,49 @@ import Network.Wai.Handler.WarpTLS
   , tlsSettings
   )
 
-versionString = "gbs-lafs 0.1.0"
+version :: Backend.Backend b => b -> Handler Version
+version backend =
+  liftIO (Backend.version backend)
 
--- Copied from the Python implementation.  Kind of arbitrary.
-maxMutableShareSize = 69105 * 1000 * 1000 * 1000 * 1000
+createImmutableStorageIndex :: Backend.Backend b => b -> StorageIndex -> AllocateBuckets -> Handler AllocationResult
+createImmutableStorageIndex backend storage_index params =
+  liftIO (Backend.createImmutableStorageIndex backend storage_index params)
 
-version :: FilePath -> Handler Version
-version storage = do
-  vfs <- liftIO $ statVFS storage
-  let available = (toInteger $ statVFS_bsize vfs) * (toInteger $ statVFS_bavail vfs)
-  return Version
-    { applicationVersion = versionString
-    , parameters =
-        Version1Parameters
-        { maximumImmutableShareSize = available
-        , maximumMutableShareSize = maxMutableShareSize
-        -- TODO: Copy the "reserved space" feature of the Python
-        -- implementation.
-        , availableSpace = available
-        , toleratesImmutableReadOverrun = True
-        , deleteMutableSharesWithZeroLengthWritev = True
-        , fillsHolesWithZeroBytes = True
-        , preventsReadPastEndOfShareData = True
-        , httpProtocolAvailable = True
-        }
-    }
+writeImmutableShare :: Backend.Backend b => b -> StorageIndex -> ShareNumber -> ShareData -> Maybe ByteRanges -> Handler ()
+writeImmutableShare backend storage_index share_number share_data content_ranges =
+  liftIO (Backend.writeImmutableShare backend storage_index share_number share_data content_ranges)
 
-createImmutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
-createImmutableStorageIndex storage_index params =
-  return AllocationResult
-  { alreadyHave = mempty
-  , allocated = mempty
-  }
+adviseCorruptImmutableShare :: Backend.Backend b => b -> StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
+adviseCorruptImmutableShare backend storage_index share_number details =
+  liftIO (Backend.adviseCorruptImmutableShare backend storage_index share_number details)
 
-writeImmutableShare :: StorageIndex -> ShareNumber -> ShareData -> Maybe ByteRanges -> Handler ()
-writeImmutableShare storage_index share_number share_data content_ranges = return mempty
+getImmutableShareNumbers :: Backend.Backend b => b -> StorageIndex -> Handler [ShareNumber]
+getImmutableShareNumbers backend storage_index =
+  liftIO (Backend.getImmutableShareNumbers backend storage_index)
 
-adviseCorruptImmutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
-adviseCorruptImmutableShare storage_index share_number details = return ()
+readImmutableShares :: Backend.Backend b => b -> StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
+readImmutableShares backend storage_index share_numbers offsets sizes =
+  liftIO (Backend.readImmutableShares backend storage_index share_numbers offsets sizes)
 
-getImmutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
-getImmutableShareNumbers storage_index = return mempty
+createMutableStorageIndex :: Backend.Backend b => b -> StorageIndex -> AllocateBuckets -> Handler AllocationResult
+createMutableStorageIndex backend storage_index params =
+  liftIO (Backend.createMutableStorageIndex backend storage_index params)
 
-readImmutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
-readImmutableShares storage_index share_numbers offsets sizes =
-  return mempty
+readvAndTestvAndWritev :: Backend.Backend b => b -> StorageIndex -> ReadTestWriteVectors -> Handler ReadTestWriteResult
+readvAndTestvAndWritev backend storage_index vectors =
+  liftIO (Backend.readvAndTestvAndWritev backend storage_index vectors)
 
-createMutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
-createMutableStorageIndex = createImmutableStorageIndex
+readMutableShares :: Backend.Backend b => b -> StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
+readMutableShares backend storage_index share_numbers offsets sizes =
+  liftIO (Backend.readMutableShares backend storage_index share_numbers offsets sizes)
 
-readvAndTestvAndWritev :: StorageIndex -> ReadTestWriteVectors -> Handler ReadTestWriteResult
-readvAndTestvAndWritev storage_index vectors =
-  return ReadTestWriteResult
-  { success = False
-  , readData = mempty
-  }
+getMutableShareNumbers :: Backend.Backend b => b -> StorageIndex -> Handler [ShareNumber]
+getMutableShareNumbers backend storage_index =
+  liftIO (Backend.getMutableShareNumbers backend storage_index)
 
-readMutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
-readMutableShares storage_index share_numbers offsets sizes = return mempty
-
-getMutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
-getMutableShareNumbers storage_index = return mempty
-
-adviseCorruptMutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
-adviseCorruptMutableShare storage_index share_number details = return ()
+adviseCorruptMutableShare :: Backend.Backend b => b -> StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
+adviseCorruptMutableShare backend storage_index share_number details =
+  liftIO (Backend.adviseCorruptMutableShare backend storage_index share_number details)
 
 data MisconfiguredTLS = MisconfiguredTLS
   deriving Show
@@ -159,18 +137,21 @@ main config =
         _                  -> throw MisconfiguredTLS
 
 main' :: FilePath -> (Application -> IO ()) -> IO ()
-main' storage run = do
+main' storagePath run = do
   run (serve api storageServer)
   where
+    backend :: FilesystemBackend
+    backend = FilesystemBackend storagePath
+
     storageServer :: Server StorageAPI
-    storageServer = version storage
-      :<|> createImmutableStorageIndex
-      :<|> writeImmutableShare
-      :<|> adviseCorruptImmutableShare
-      :<|> getImmutableShareNumbers
-      :<|> readImmutableShares
-      :<|> createMutableStorageIndex
-      :<|> readvAndTestvAndWritev
-      :<|> readMutableShares
-      :<|> getMutableShareNumbers
-      :<|> adviseCorruptMutableShare
+    storageServer = version backend
+      :<|> createImmutableStorageIndex backend
+      :<|> writeImmutableShare backend
+      :<|> adviseCorruptImmutableShare backend
+      :<|> getImmutableShareNumbers backend
+      :<|> readImmutableShares backend
+      :<|> createMutableStorageIndex backend
+      :<|> readvAndTestvAndWritev backend
+      :<|> readMutableShares backend
+      :<|> getMutableShareNumbers backend
+      :<|> adviseCorruptMutableShare backend
