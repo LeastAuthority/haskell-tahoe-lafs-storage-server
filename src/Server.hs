@@ -1,10 +1,16 @@
 module Server
-  ( main
+  ( StorageServerConfig(StorageServerConfig)
+  , main
   , versionString
   ) where
 
 import Control.Monad.IO.Class
   ( liftIO
+  )
+
+import Control.Exception
+  ( Exception
+  , throw
   )
 
 import Storage
@@ -52,10 +58,20 @@ import Network.Wai
   ( Application
   )
 import Network.Wai.Handler.Warp
-  ( run
+  ( Port
+  , Settings
+  , runSettings
+  , defaultSettings
+  , setPort
   )
 
-versionString = "tahoe-lafhs 0.1.0"
+import Network.Wai.Handler.WarpTLS
+  ( TLSSettings
+  , runTLS
+  , tlsSettings
+  )
+
+versionString = "gbs-lafs 0.1.0"
 
 -- Copied from the Python implementation.  Kind of arbitrary.
 maxMutableShareSize = 69105 * 1000 * 1000 * 1000 * 1000
@@ -98,7 +114,8 @@ getImmutableShareNumbers :: StorageIndex -> Handler [ShareNumber]
 getImmutableShareNumbers storage_index = return mempty
 
 readImmutableShares :: StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> Handler ReadResult
-readImmutableShares storage_index share_numbers = return mempty
+readImmutableShares storage_index share_numbers offsets sizes =
+  return mempty
 
 createMutableStorageIndex :: StorageIndex -> AllocateBuckets -> Handler AllocationResult
 createMutableStorageIndex = createImmutableStorageIndex
@@ -119,9 +136,31 @@ getMutableShareNumbers storage_index = return mempty
 adviseCorruptMutableShare :: StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
 adviseCorruptMutableShare storage_index share_number details = return ()
 
-main :: FilePath -> IO ()
-main storage = do
-  run 8081 (serve api storageServer)
+data MisconfiguredTLS = MisconfiguredTLS
+  deriving Show
+instance Exception MisconfiguredTLS
+
+data StorageServerConfig = StorageServerConfig
+  { storagePath :: FilePath
+  , listenPort  :: Port
+  , certificate :: Maybe FilePath
+  , key         :: Maybe FilePath
+  } deriving (Show, Eq)
+
+main :: StorageServerConfig -> IO ()
+main config =
+  main' (storagePath config) run
+  where
+    settings = setPort (listenPort config) defaultSettings
+    run =
+      case (certificate config, key config) of
+        (Nothing, Nothing) -> runSettings settings
+        (Just c, Just k)   -> runTLS (tlsSettings c k) settings
+        _                  -> throw MisconfiguredTLS
+
+main' :: FilePath -> (Application -> IO ()) -> IO ()
+main' storage run = do
+  run (serve api storageServer)
   where
     storageServer :: Server StorageAPI
     storageServer = version storage

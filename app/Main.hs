@@ -2,23 +2,51 @@ module Main where
 
 import qualified Server
 
-import System.Console.ArgParser
-  ( ParserSpec
-  , Descr(Descr)
-  , parsedBy
-  , andBy
-  , reqPos
-  , withParseResult
+import Options.Applicative
+  ( Parser
+  , strOption
+  , option
+  , auto
+  , long
+  , metavar
+  , value
+  , help
+  , execParser
+  , info
+  , progDesc
+  , fullDesc
+  , helper
+  , optional
+  , (<**>)
   )
 
-data StorageServerConfig = StorageServerConfig
-  { storagePath :: FilePath
-  }
+import Data.Semigroup
+  ( (<>)
+  )
 
-configParser :: ParserSpec StorageServerConfig
-configParser = StorageServerConfig
-  `parsedBy` reqPos "storage-path" `Descr` "Absolute path to the storage root directory."
+import Network.Wai.Handler.Warp
+  ( Port
+  )
+
+server :: Parser Server.StorageServerConfig
+server = Server.StorageServerConfig
+  <$> strOption (long "storage-path"
+                 <> metavar "DIRECTORY"
+                 <> help "Path to the storage root directory.")
+  <*> option auto (long "listen-port"
+                 <> metavar "PORT-NUMBER"
+                 <> help "TCP port number on which to listen."
+                 <> value (8888 :: Port))
+  <*> (optional $ strOption (long "certificate-path"
+                               <> metavar "FILENAME"
+                               <> help "Path to storage server certificate."))
+  <*> (optional $ strOption (long "key-path"
+                               <> metavar "FILENAME"
+                               <> help "Path to storage server key."))
 
 main :: IO ()
-main =
-  withParseResult configParser (\args -> Server.main (storagePath args))
+main = Server.main =<< execParser opts
+  where
+    opts = info (server <**> helper)
+      ( fullDesc
+      <> progDesc "Run a Tahoe-LAFS (GBS) storage server.")

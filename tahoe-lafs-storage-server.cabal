@@ -37,6 +37,7 @@ library
                      , servant-client
                      , wai
                      , warp
+                     , warp-tls
                      , statvfs
 
 executable tahoe-lafs-storage-server
@@ -44,5 +45,6 @@ executable tahoe-lafs-storage-server
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
-                     , argparser
+                     , optparse-applicative
                      , tahoe-lafs-storage-server
+                     , warp
