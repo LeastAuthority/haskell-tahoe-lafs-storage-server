@@ -4,6 +4,17 @@ module HTTPSpec
   ( spec
   ) where
 
+import qualified Data.Vector as Vector
+import qualified Data.Map.Strict as Map
+
+import Data.Aeson.Types
+  ( Value(String, Number, Array)
+  )
+
+import Data.Aeson
+  ( encode
+  )
+
 import Data.ByteString
   ( ByteString
   )
@@ -28,7 +39,17 @@ import Test.Hspec.Wai
   , post
   , shouldRespondWith
   , request
+  , ResponseMatcher(ResponseMatcher)
+  , matchBody
+  , matchStatus
+  , matchHeaders
+  , (<:>)
   )
+
+import Test.Hspec.Wai.Matcher
+  ( bodyEquals
+  )
+
 import Network.Wai.Test
   ( SResponse
   )
@@ -47,11 +68,27 @@ import Server
 
 postJSON :: ByteString -> L.ByteString -> WaiSession SResponse
 postJSON path body =
-  request methodPost path [("Content-Type", "application/json")] body
+  request
+    methodPost
+    path
+    [("Content-Type", "application/json"), ("Accept", "application/json")]
+    body
 
 allocateBucketsJSON :: L.ByteString
 allocateBucketsJSON =
-  "{renew-secret: 'abcdefgh', cancel-secret: 'ijklmnop', share-numbers: [1, 3, 5], allocated-size: 512}"
+  encode $ Map.fromList
+  [ ("renew-secret" :: String, String "abcdefgh")
+  , ("cancel-secret" :: String, String "ijklmnop")
+  , ("share-numbers" :: String, Array (Vector.fromList [Number 1, Number 3, Number 5]))
+  , ("allocated-size" :: String, Number 512)
+  ]
+
+allocateResultJSON :: ByteString
+allocateResultJSON =
+  L.toStrict $ encode $ Map.fromList
+  [ ("already-have" :: String, Array Vector.empty)
+  , ("allocated" :: String, Array (Vector.fromList [Number 1, Number 3, Number 5]))
+  ]
 
 spec :: Spec
 spec = with (return $ app memoryBackend) $
@@ -65,4 +102,4 @@ spec = with (return $ app memoryBackend) $
         postJSON
           "/v1/immutable/abcdefgh"
           allocateBucketsJSON
-          `shouldRespondWith` 201
+          `shouldRespondWith` 201 { matchHeaders = ["Content-Type" <:> "application/json"], matchBody = bodyEquals allocateBucketsJSON }

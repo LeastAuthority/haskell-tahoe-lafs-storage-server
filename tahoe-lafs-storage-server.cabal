@@ -61,8 +61,11 @@ test-suite http-tests
   default-language:    Haskell2010
   build-depends:       base
                      , bytestring
+                     , containers
+                     , vector
                      , hspec
                      , hspec-wai
                      , wai-extra
                      , http-types
+                     , aeson
                      , tahoe-lafs-storage-server
