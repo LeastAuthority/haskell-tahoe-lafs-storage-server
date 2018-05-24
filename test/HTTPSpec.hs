@@ -15,6 +15,10 @@ import Data.Aeson
   ( encode
   )
 
+import Data.Char
+  ( ord
+  )
+
 import Data.ByteString
   ( ByteString
   )
@@ -23,6 +27,7 @@ import qualified Data.ByteString.Lazy as L
 
 import Network.HTTP.Types.Method
   ( methodPost
+  , methodPut
   )
 
 import Test.Hspec
@@ -74,6 +79,14 @@ postJSON path body =
     [("Content-Type", "application/json"), ("Accept", "application/json")]
     body
 
+putShare :: Num i => ByteString -> i -> WaiSession SResponse
+putShare path size =
+  request
+    methodPut
+    path
+    [("Content-Type", "application/octet-stream")]
+    "foobar"
+
 allocateBucketsJSON :: L.ByteString
 allocateBucketsJSON =
   encode $ Map.fromList
@@ -108,3 +121,7 @@ spec = with (return $ app memoryBackend) $
           { matchHeaders = ["Content-Type" <:> "application/json;charset=utf-8"]
           , matchBody = bodyEquals allocateResultJSON
           }
+
+    describe "POST /v1/immutable/abcdefgh/1" $ do
+      it "responds with CREATED" $
+        putShare "/v1/immutable/abcdefgh/1" 512 `shouldRespondWith` 201

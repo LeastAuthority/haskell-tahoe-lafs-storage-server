@@ -55,6 +55,8 @@ import Servant
   , Post
   , Put
   , PostCreated
+  , Verb
+  , StdMethod(PUT)
   , (:>)
   , (:<|>)
   )
@@ -74,6 +76,8 @@ import Network.HTTP.Types
 import ServantUtil
   ( CBOR
   )
+
+type PutCreated = Verb 'PUT 201
 
 tahoeJSONOptions = defaultOptions
   { fieldLabelModifier = camelTo2 '-'
@@ -182,7 +186,7 @@ type StorageAPI =
   --
   -- PUT /v1/immutable/:storage_index/:share_number
   -- Write data for an immutable share to an allocated storage index
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> Put '[CBOR, JSON] ()
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> PutCreated '[CBOR, JSON] ()
 
   --
   -- POST /v1/immutable/:storage_index/:share_number/corrupt
