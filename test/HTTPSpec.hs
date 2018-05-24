@@ -63,8 +63,8 @@ import Backend
   ( Backend
   )
 
-import MemoryBackend
-  ( memoryBackend
+import NullBackend
+  ( NullBackend(NullBackend)
   )
 
 import Server
@@ -104,7 +104,7 @@ allocateResultJSON =
   ]
 
 spec :: Spec
-spec = with (return $ app memoryBackend) $
+spec = with (return $ app NullBackend) $
   describe "v1" $ do
     describe "GET /v1/version" $ do
       it "responds with OK" $
