@@ -57,3 +57,6 @@ instance Backend NullBackend where
   adviseCorruptImmutableShare NullBackend _ _ _ =
     return mempty
 
+  getImmutableShareNumbers NullBackend _ =
+    return []
+

@@ -28,6 +28,7 @@ import qualified Data.ByteString.Lazy as L
 import Network.HTTP.Types.Method
   ( methodPost
   , methodPut
+  , methodGet
   )
 
 import Test.Hspec
@@ -40,8 +41,6 @@ import Test.Hspec
 import Test.Hspec.Wai
   ( WaiSession
   , with
-  , get
-  , post
   , shouldRespondWith
   , request
   , ResponseMatcher(ResponseMatcher)
@@ -70,6 +69,14 @@ import NullBackend
 import Server
   ( app
   )
+
+getJSON :: ByteString -> WaiSession SResponse
+getJSON path =
+  request
+    methodGet
+    path
+    [("Accept", "application/json")]
+    ""
 
 postJSON :: ByteString -> L.ByteString -> WaiSession SResponse
 postJSON path body =
@@ -109,12 +116,16 @@ corruptionJSON =
   [ ("reason" :: String, "foo and bar" :: String)
   ]
 
+sharesResultJSON :: L.ByteString
+-- Simple enough I won't go through Aeson here
+sharesResultJSON = "[]"
+
 spec :: Spec
 spec = with (return $ app NullBackend) $
   describe "v1" $ do
     describe "GET /v1/version" $ do
       it "responds with OK" $
-        get "/v1/version" `shouldRespondWith` 200
+        getJSON "/v1/version" `shouldRespondWith` 200
 
     describe "POST /v1/immutable/abcdefgh" $ do
       it "responds with CREATED" $
@@ -138,3 +149,10 @@ spec = with (return $ app NullBackend) $
           "/v1/immutable/abcdefgh/1/corrupt"
           corruptionJSON
           `shouldRespondWith` 200
+
+    describe "GET /v1/immutable/abcdefgh/shares" $ do
+      it "responds with OK and a JSON list" $
+        getJSON "/v1/immutable/abcdefgh/shares"
+        `shouldRespondWith` 200
+        { matchBody = bodyEquals sharesResultJSON
+        }
