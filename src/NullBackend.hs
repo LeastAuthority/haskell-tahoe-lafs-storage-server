@@ -53,3 +53,7 @@ instance Backend NullBackend where
 
   writeImmutableShare NullBackend _ _ _ _ =
     return mempty
+
+  adviseCorruptImmutableShare NullBackend _ _ _ =
+    return mempty
+

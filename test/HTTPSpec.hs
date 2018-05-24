@@ -100,7 +100,13 @@ allocateResultJSON :: L.ByteString
 allocateResultJSON =
   encode $ Map.fromList
   [ ("already-have" :: String, Array Vector.empty)
-  , ("allocated" :: String, Array (Vector.fromList [Number 1, Number 3, Number 5]))
+  , ("allocated" :: String, Array Vector.empty)
+  ]
+
+corruptionJSON :: L.ByteString
+corruptionJSON =
+  encode $ Map.fromList
+  [ ("reason" :: String, "foo and bar" :: String)
   ]
 
 spec :: Spec
@@ -125,3 +131,10 @@ spec = with (return $ app NullBackend) $
     describe "POST /v1/immutable/abcdefgh/1" $ do
       it "responds with CREATED" $
         putShare "/v1/immutable/abcdefgh/1" 512 `shouldRespondWith` 201
+
+    describe "POST /v1/immutable/abcdefgh/1/corrupt" $ do
+      it "responds with OK" $
+        postJSON
+          "/v1/immutable/abcdefgh/1/corrupt"
+          corruptionJSON
+          `shouldRespondWith` 200
