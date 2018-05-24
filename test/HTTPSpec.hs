@@ -83,9 +83,9 @@ allocateBucketsJSON =
   , ("allocated-size" :: String, Number 512)
   ]
 
-allocateResultJSON :: ByteString
+allocateResultJSON :: L.ByteString
 allocateResultJSON =
-  L.toStrict $ encode $ Map.fromList
+  encode $ Map.fromList
   [ ("already-have" :: String, Array Vector.empty)
   , ("allocated" :: String, Array (Vector.fromList [Number 1, Number 3, Number 5]))
   ]
@@ -102,4 +102,9 @@ spec = with (return $ app memoryBackend) $
         postJSON
           "/v1/immutable/abcdefgh"
           allocateBucketsJSON
-          `shouldRespondWith` 201 { matchHeaders = ["Content-Type" <:> "application/json"], matchBody = bodyEquals allocateBucketsJSON }
+          `shouldRespondWith` 201
+          -- TODO: ;charset=utf-8 is just an artifact of Servant, would be
+          -- nice to turn it off and not assert it here.
+          { matchHeaders = ["Content-Type" <:> "application/json;charset=utf-8"]
+          , matchBody = bodyEquals allocateResultJSON
+          }

@@ -31,6 +31,7 @@ import Storage
   , ApplicationVersion(..)
   , Version1Parameters(..)
   , AllocationResult(..)
+  , shareNumbers
   )
 
 import Backend
@@ -66,7 +67,7 @@ instance Backend MemoryBackend where
   createImmutableStorageIndex backend idx params =
     return AllocationResult
     { alreadyHave = mempty
-    , allocated = mempty
+    , allocated = (shareNumbers params)
     }
 
   writeImmutableShare backend storage_index share_number share_data content_ranges =

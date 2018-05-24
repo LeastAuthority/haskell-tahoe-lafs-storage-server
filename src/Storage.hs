@@ -54,6 +54,7 @@ import Servant
   , Get
   , Post
   , Put
+  , PostCreated
   , (:>)
   , (:<|>)
   )
@@ -176,7 +177,7 @@ type StorageAPI =
   --
   -- POST /v1/immutable/:storage_index
   -- Initialize a new immutable storage index
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> Post '[CBOR, JSON] AllocationResult
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> ReqBody '[CBOR, JSON] AllocateBuckets :> PostCreated '[CBOR, JSON] AllocationResult
 
   --
   -- PUT /v1/immutable/:storage_index/:share_number
