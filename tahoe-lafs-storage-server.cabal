@@ -17,10 +17,12 @@ library
   hs-source-dirs:      src
   exposed-modules:     Storage
                      , Backend
+                     , NullBackend
+                     , MemoryBackend
+                     , FilesystemBackend
                      , Server
                      , Client
   other-modules:       ServantUtil
-                     , FilesystemBackend
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , containers
@@ -50,3 +52,17 @@ executable tahoe-lafs-storage-server
                      , optparse-applicative
                      , tahoe-lafs-storage-server
                      , warp
+
+test-suite http-tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  other-modules:       HTTPSpec
+  default-language:    Haskell2010
+  build-depends:       base
+                     , bytestring
+                     , hspec
+                     , hspec-wai
+                     , wai-extra
+                     , http-types
+                     , tahoe-lafs-storage-server

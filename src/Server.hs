@@ -1,5 +1,6 @@
 module Server
   ( StorageServerConfig(StorageServerConfig)
+  , app
   , main
   ) where
 
@@ -125,24 +126,10 @@ data StorageServerConfig = StorageServerConfig
   , key         :: Maybe FilePath
   } deriving (Show, Eq)
 
-main :: StorageServerConfig -> IO ()
-main config =
-  main' (storagePath config) run
+app :: Backend.Backend b => b -> Application
+app backend =
+  serve api storageServer
   where
-    settings = setPort (listenPort config) defaultSettings
-    run =
-      case (certificate config, key config) of
-        (Nothing, Nothing) -> runSettings settings
-        (Just c, Just k)   -> runTLS (tlsSettings c k) settings
-        _                  -> throw MisconfiguredTLS
-
-main' :: FilePath -> (Application -> IO ()) -> IO ()
-main' storagePath run = do
-  run (serve api storageServer)
-  where
-    backend :: FilesystemBackend
-    backend = FilesystemBackend storagePath
-
     storageServer :: Server StorageAPI
     storageServer = version backend
       :<|> createImmutableStorageIndex backend
@@ -155,3 +142,14 @@ main' storagePath run = do
       :<|> readMutableShares backend
       :<|> getMutableShareNumbers backend
       :<|> adviseCorruptMutableShare backend
+
+main :: StorageServerConfig -> IO ()
+main config =
+  run $ app (FilesystemBackend $ storagePath config)
+  where
+    settings = setPort (listenPort config) defaultSettings
+    run a =
+      case (certificate config, key config) of
+        (Nothing, Nothing) -> runSettings settings a
+        (Just c, Just k)   -> runTLS (tlsSettings c k) settings a
+        _                  -> throw MisconfiguredTLS
