@@ -6,6 +6,8 @@ import Data.Bits
   ( xor
   )
 
+import qualified Data.Set as Set
+
 import Test.Hspec
   ( Spec
   , context
@@ -20,11 +22,13 @@ import Test.QuickCheck
   , forAll
   , vectorOf
   , property
+  , (===)
   )
 
 import Test.QuickCheck.Monadic
   ( monadicIO
   , assert
+  , pre
   , run
   )
 
@@ -72,22 +76,29 @@ import MemoryBackend
   ( memoryBackend
   )
 
+isUnique :: Ord a => [a] -> Bool
+isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList xs)
+
 -- In the result of creating an immutable storage index, the sum of
 -- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
-alreadyHavePlusAllocated :: Backend b => b -> StorageIndex -> [ShareNumber] -> Size -> Property
+alreadyHavePlusAllocated :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> Size -> Property
 alreadyHavePlusAllocated b storage_index share_numbers size = monadicIO $ do
-  result <- run $ createImmutableStorageIndex b storage_index $ AllocateBuckets "renew" "cancel" share_numbers size
+  pre (isUnique share_numbers)
+  backend <- run b
+  result <- run $ createImmutableStorageIndex backend storage_index $ AllocateBuckets "renew" "cancel" share_numbers size
   assert $ (alreadyHave result) ++ (allocated result) == share_numbers
 
 
-immutableWriteAndReadShare :: Backend b => b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
+immutableWriteAndReadShare :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
 immutableWriteAndReadShare b storage_index share_numbers share_seed = monadicIO $ do
+  pre (isUnique share_numbers)
   let permutedShares = Prelude.map (permuteShare share_seed) share_numbers
   let size = fromIntegral (Data.ByteString.length share_seed)
   let allocate = AllocateBuckets "renew" "cancel" share_numbers size
-  result <- run $ createImmutableStorageIndex b storage_index allocate
-  run $ writeShares b storage_index $ zip share_numbers permutedShares
-  readShares <- run $ readShares b storage_index share_numbers
+  backend <- run b
+  result <- run $ createImmutableStorageIndex backend storage_index allocate
+  run $ writeShares backend storage_index $ zip share_numbers permutedShares
+  readShares <- run $ readShares backend storage_index share_numbers
   assert $ permutedShares == readShares
   where
     permuteShare :: ByteString -> ShareNumber -> ByteString

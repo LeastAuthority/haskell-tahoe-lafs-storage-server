@@ -6,10 +6,14 @@ module MemoryBackend
 import Prelude hiding
   ( map
   , lookup
+  , filter
   )
 
 import Data.IORef
  ( IORef
+ , newIORef
+ , readIORef
+ , modifyIORef
  )
 
 import Data.Map.Strict
@@ -17,6 +21,12 @@ import Data.Map.Strict
   , map
   , keys
   , lookup
+  , alter
+  , member
+  , insert
+  , adjust
+  , fromList
+  , filterWithKey
   )
 
 import System.Posix.StatVFS
@@ -41,22 +51,24 @@ import Backend
   ( Backend(..)
   )
 
-type MemoryStorage = Map StorageIndex (Map ShareNumber ShareData)
+type ShareStorage = Map StorageIndex (Map ShareNumber ShareData)
+type BucketStorage = Map StorageIndex (Map ShareNumber (Size, ShareData))
 
 data MemoryBackend = MemoryBackend
-  { shares :: MemoryStorage -- Completely written immutable shares
-  , buckets :: MemoryStorage -- In-progress immutable share uploads
-  } deriving (Show)
+  { shares :: IORef ShareStorage -- Completely written immutable shares
+  , buckets :: IORef BucketStorage -- In-progress immutable share uploads
+  }
 
 instance Backend MemoryBackend where
-  version backend =
+  version backend = do
+    totalSize <- totalShareSize backend
     return Version
       { applicationVersion = "(memory)"
       , parameters =
           Version1Parameters
           { maximumImmutableShareSize = 1024 * 1024 * 64
           , maximumMutableShareSize = 1024 * 1024 * 64
-          , availableSpace = (1024 * 1024 * 1024) - (totalShareSize backend)
+          , availableSpace = (1024 * 1024 * 1024) - totalSize
           , toleratesImmutableReadOverrun = True
           , deleteMutableSharesWithZeroLengthWritev = True
           , fillsHolesWithZeroBytes = True
@@ -73,27 +85,63 @@ instance Backend MemoryBackend where
     , allocated = (shareNumbers params)
     }
 
-  writeImmutableShare backend storage_index share_number share_data content_ranges =
-    return mempty
+  writeImmutableShare backend storage_index share_number share_data Nothing = do
+    let shares' = shares backend
+    modifyIORef shares' $ addShare storage_index share_number share_data
+    s <- readIORef shares'
+    putStrLn $ show s
+    return ()
 
   adviseCorruptImmutableShare backend _ _ _ =
     return mempty
 
-  getImmutableShareNumbers backend storage_index =
-    return share_numbers
-    where
-      share_numbers =
-        case lookup storage_index $ shares backend of
-          Nothing -> []
-          Just shares -> keys shares
+  getImmutableShareNumbers backend storage_index = do
+    shares' <- readIORef $ shares backend
+    return $ case lookup storage_index shares' of
+      Nothing       -> []
+      Just shares'' -> keys shares''
 
-  readImmutableShares backend storage_index shares offsets sizes =
-    return mempty
+  readImmutableShares backend storageIndex [] offsets sizes = do
+    shareNumbers <- getImmutableShareNumbers backend storageIndex
+    case shareNumbers of
+      [] ->
+        return mempty
+      _  ->
+        readImmutableShares backend storageIndex shareNumbers offsets sizes
+
+  readImmutableShares backend storageIndex shareNumbers [] [] = do
+    shares' <- readIORef $ shares backend
+    putStrLn $ "Reading " ++ (show storageIndex) ++ " " ++ (show shareNumbers) ++ " from " ++ (show shares')
+    let result = case lookup storageIndex shares' of
+          Nothing       -> mempty
+          Just shares'' ->
+            let matchingShares = filterWithKey matches shares'' in
+              map (replicate 1) matchingShares
+          where
+            matches k v = k `elem` shareNumbers
+    putStrLn $ "Result is " ++ (show result)
+    return result
 
 
+totalShareSize :: MemoryBackend -> IO Size
+totalShareSize backend = do
+  shares <- readIORef $ shares backend
+  return $ toInteger $ sum $ map length shares
 
-totalShareSize :: MemoryBackend -> Size
-totalShareSize backend = toInteger $ sum $ map length (shares backend)
+addShare :: StorageIndex -> ShareNumber -> ShareData -> ShareStorage -> ShareStorage
+addShare storageIndex shareNumber shareData shareStorage =
+  case lookup storageIndex shareStorage of
+    Nothing      ->
+      insert storageIndex (fromList [(shareNumber, shareData)]) shareStorage
 
-memoryBackend :: MemoryBackend
-memoryBackend = MemoryBackend mempty mempty
+    Just shares  ->
+      adjust addShare' storageIndex shareStorage
+  where
+    addShare' shares =
+      insert shareNumber shareData shares
+
+memoryBackend :: IO MemoryBackend
+memoryBackend = do
+  shares <- newIORef mempty
+  buckets <- newIORef mempty
+  return $ MemoryBackend shares buckets
