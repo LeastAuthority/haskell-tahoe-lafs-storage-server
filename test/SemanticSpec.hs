@@ -22,6 +22,7 @@ import Test.QuickCheck
   , forAll
   , vectorOf
   , property
+  , collect
   , (===)
   )
 
@@ -82,23 +83,25 @@ isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList x
 -- In the result of creating an immutable storage index, the sum of
 -- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
 alreadyHavePlusAllocated :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> Size -> Property
-alreadyHavePlusAllocated b storage_index share_numbers size = monadicIO $ do
-  pre (isUnique share_numbers)
+alreadyHavePlusAllocated b storageIndex shareNumbers size = collect shareNumbers $ monadicIO $ do
+  pre (isUnique shareNumbers)
+  pre (all (>= 0) shareNumbers)
   backend <- run b
-  result <- run $ createImmutableStorageIndex backend storage_index $ AllocateBuckets "renew" "cancel" share_numbers size
-  assert $ (alreadyHave result) ++ (allocated result) == share_numbers
+  result <- run $ createImmutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
+  assert $ (alreadyHave result) ++ (allocated result) == shareNumbers
 
 
 immutableWriteAndReadShare :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
-immutableWriteAndReadShare b storage_index share_numbers share_seed = monadicIO $ do
-  pre (isUnique share_numbers)
-  let permutedShares = Prelude.map (permuteShare share_seed) share_numbers
-  let size = fromIntegral (Data.ByteString.length share_seed)
-  let allocate = AllocateBuckets "renew" "cancel" share_numbers size
+immutableWriteAndReadShare b storageIndex shareNumbers shareSeed = monadicIO $ do
+  pre (isUnique shareNumbers)
+  pre (all (>= 0) shareNumbers)
+  let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
+  let size = fromIntegral (Data.ByteString.length shareSeed)
+  let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
   backend <- run b
-  result <- run $ createImmutableStorageIndex backend storage_index allocate
-  run $ writeShares backend storage_index $ zip share_numbers permutedShares
-  readShares <- run $ readShares backend storage_index share_numbers
+  result <- run $ createImmutableStorageIndex backend storageIndex allocate
+  run $ writeShares backend storageIndex $ zip shareNumbers permutedShares
+  readShares <- run $ readShares backend storageIndex shareNumbers
   assert $ permutedShares == readShares
   where
     permuteShare :: ByteString -> ShareNumber -> ByteString
@@ -106,9 +109,9 @@ immutableWriteAndReadShare b storage_index share_numbers share_seed = monadicIO 
       Data.ByteString.map (xor $ fromIntegral number) seed
 
     readShares :: Backend b => b -> StorageIndex -> [ShareNumber] -> IO [ShareData]
-    readShares b storage_index share_numbers = do
+    readShares b storageIndex shareNumbers = do
       -- Map ShareNumber [ShareData]
-      shares <- readImmutableShares b storage_index share_numbers [] []
+      shares <- readImmutableShares b storageIndex shareNumbers [] []
       let shareList = (toList shares) :: [(ShareNumber, [ShareData])]
       let sortedShares = (sort shareList) :: [(ShareNumber, [ShareData])]
       let shareDataLists = (Prelude.map snd sortedShares) :: [[ShareData]]
@@ -116,11 +119,11 @@ immutableWriteAndReadShare b storage_index share_numbers share_seed = monadicIO 
       return shareData
 
     writeShares :: Backend b => b -> StorageIndex -> [(ShareNumber, ShareData)] -> IO ()
-    writeShares b storage_index [] = return ()
-    writeShares b storage_index ((share_number, share_data):rest) = do
+    writeShares b storageIndex [] = return ()
+    writeShares b storageIndex ((shareNumber, shareData):rest) = do
       -- TODO For now we'll do single complete writes.  Later try breaking up the data.
-      writeImmutableShare b storage_index share_number share_data Nothing
-      writeShares b storage_index rest
+      writeImmutableShare b storageIndex shareNumber shareData Nothing
+      writeShares b storageIndex rest
 
 
 gen16String :: Gen String
