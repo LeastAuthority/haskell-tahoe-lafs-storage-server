@@ -120,6 +120,10 @@ sharesResultJSON :: L.ByteString
 -- Simple enough I won't go through Aeson here
 sharesResultJSON = "[]"
 
+readResultJSON :: L.ByteString
+-- Simple, again.
+readResultJSON = "{}"
+
 spec :: Spec
 spec = with (return $ app NullBackend) $
   describe "v1" $ do
@@ -155,4 +159,11 @@ spec = with (return $ app NullBackend) $
         getJSON "/v1/immutable/abcdefgh/shares"
         `shouldRespondWith` 200
         { matchBody = bodyEquals sharesResultJSON
+        }
+
+    describe "GET /v1/immutable/abcdefgh" $ do
+      it "responds with OK and a JSON object" $
+        getJSON "/v1/immutable/abcdefgh"
+        `shouldRespondWith` 200
+        { matchBody = bodyEquals readResultJSON
         }

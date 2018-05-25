@@ -60,3 +60,5 @@ instance Backend NullBackend where
   getImmutableShareNumbers NullBackend _ =
     return []
 
+  readImmutableShares NullBackend _ _ _ _ =
+    return mempty
