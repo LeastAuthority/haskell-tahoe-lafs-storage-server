@@ -5,15 +5,18 @@ module MemoryBackend
 
 import Prelude hiding
   ( map
+  , lookup
   )
 
 import Data.IORef
- (
+ ( IORef
  )
 
 import Data.Map.Strict
   ( Map
   , map
+  , keys
+  , lookup
   )
 
 import System.Posix.StatVFS
@@ -72,6 +75,21 @@ instance Backend MemoryBackend where
 
   writeImmutableShare backend storage_index share_number share_data content_ranges =
     return mempty
+
+  adviseCorruptImmutableShare backend _ _ _ =
+    return mempty
+
+  getImmutableShareNumbers backend storage_index =
+    return share_numbers
+    where
+      share_numbers =
+        case lookup storage_index $ shares backend of
+          Nothing -> []
+          Just shares -> keys shares
+
+  readImmutableShares backend storage_index shares offsets sizes =
+    return mempty
+
 
 
 totalShareSize :: MemoryBackend -> Size
