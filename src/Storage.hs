@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- Supports derivations for ShareNumber
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- https://artyom.me/aeson#records-and-json-generics
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
@@ -11,6 +13,8 @@ module Storage
   , Offset
   , StorageIndex
   , ShareNumber
+  , shareNumber
+  , toInteger
   , ShareData
   , ApplicationVersion(..)
   , Version1Parameters(..)
@@ -25,6 +29,21 @@ module Storage
   , api
   ) where
 
+import Prelude hiding
+  ( toInteger
+  )
+
+import Data.Scientific
+  ( toBoundedInteger
+  )
+
+import Data.Text
+  ( unpack
+  )
+import Data.Text.Encoding
+  ( decodeUtf8
+  )
+
 import Data.Map.Strict
   ( Map
   )
@@ -34,11 +53,17 @@ import Data.ByteString
 import Data.Aeson
   ( ToJSON(..)
   , FromJSON(..)
+  , ToJSONKey(..)
+  , FromJSONKey(..)
+  , Value(Number)
   , defaultOptions
   , camelTo2
   , genericToJSON
   , genericParseJSON
   , fieldLabelModifier
+  )
+import Text.Read
+  ( readMaybe
   )
 import GHC.Generics
   ( Generic
@@ -62,8 +87,8 @@ import Servant
   )
 
 import Web.HttpApiData
-  ( FromHttpApiData(parseHeader)
-  , ToHttpApiData(toHeader)
+  ( FromHttpApiData(..)
+  , ToHttpApiData(..)
   )
 
 import Network.HTTP.Types
@@ -86,12 +111,39 @@ tahoeJSONOptions = defaultOptions
 type ApplicationVersion = String
 type Size = Integer
 type Offset = Integer
-type ShareNumber = Integer
 -- TODO These should probably all be byte strings instead.
 type RenewSecret = String
 type CancelSecret = String
 type StorageIndex = String
 type ShareData = ByteString
+
+newtype ShareNumber = ShareNumber Integer
+  deriving
+    ( Show, Generic
+    , Eq, Ord
+    , ToJSON, FromJSON, ToJSONKey, FromJSONKey
+    , ToHttpApiData
+    )
+
+instance FromHttpApiData ShareNumber where
+  parseUrlPiece t =
+    case readMaybe $ unpack t of
+      Nothing -> Left "failed to parse"
+      Just i  -> case shareNumber i of
+        Nothing -> Left "number out of bounds"
+        Just s  -> Right s
+  parseQueryParam = parseUrlPiece
+  parseHeader     = parseUrlPiece . decodeUtf8
+
+shareNumber :: Integer -> Maybe ShareNumber
+shareNumber n =
+  if n < 0 then
+    Nothing
+  else
+    Just $ ShareNumber n
+
+toInteger :: ShareNumber -> Integer
+toInteger (ShareNumber i) = i
 
 data Version1Parameters = Version1Parameters
   { maximumImmutableShareSize                 :: Size

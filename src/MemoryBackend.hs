@@ -89,7 +89,6 @@ instance Backend MemoryBackend where
     let shares' = shares backend
     modifyIORef shares' $ addShare storage_index share_number share_data
     s <- readIORef shares'
-    putStrLn $ show s
     return ()
 
   adviseCorruptImmutableShare backend _ _ _ =
@@ -111,7 +110,6 @@ instance Backend MemoryBackend where
 
   readImmutableShares backend storageIndex shareNumbers [] [] = do
     shares' <- readIORef $ shares backend
-    putStrLn $ "Reading " ++ (show storageIndex) ++ " " ++ (show shareNumbers) ++ " from " ++ (show shares')
     let result = case lookup storageIndex shares' of
           Nothing       -> mempty
           Just shares'' ->
@@ -119,7 +117,6 @@ instance Backend MemoryBackend where
               map (replicate 1) matchingShares
           where
             matches k v = k `elem` shareNumbers
-    putStrLn $ "Result is " ++ (show result)
     return result
 
 

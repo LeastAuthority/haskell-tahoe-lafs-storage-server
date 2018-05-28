@@ -4,6 +4,13 @@ module HTTPSpec
   ( spec
   ) where
 
+import Prelude hiding
+  ( replicate
+  )
+
+import GHC.Int
+  ( Int64
+  )
 import qualified Data.Vector as Vector
 import qualified Data.Map.Strict as Map
 
@@ -86,13 +93,13 @@ postJSON path body =
     [("Content-Type", "application/json"), ("Accept", "application/json")]
     body
 
-putShare :: Num i => ByteString -> i -> WaiSession SResponse
+putShare :: ByteString -> Int64 -> WaiSession SResponse
 putShare path size =
   request
     methodPut
     path
-    [("Content-Type", "application/octet-stream")]
-    "foobar"
+    [("Content-Type", "application/octet-stream"), ("Accept", "application/json")]
+    (L.replicate size 0xdd)
 
 allocateBucketsJSON :: L.ByteString
 allocateBucketsJSON =
@@ -143,7 +150,7 @@ spec = with (return $ app NullBackend) $
           , matchBody = bodyEquals allocateResultJSON
           }
 
-    describe "POST /v1/immutable/abcdefgh/1" $ do
+    describe "PUT /v1/immutable/abcdefgh/1" $ do
       it "responds with CREATED" $
         putShare "/v1/immutable/abcdefgh/1" 512 `shouldRespondWith` 201
 

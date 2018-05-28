@@ -2,8 +2,29 @@ module SemanticSpec
   ( spec
   ) where
 
+import Prelude hiding
+  ( toInteger
+  , lookup
+  )
+
+import Control.Monad
+  ( when
+  )
+
+import Data.Maybe
+  ( catMaybes
+  )
+
+import Data.List
+  ( genericIndex
+  )
+
 import Data.Bits
   ( xor
+  )
+
+import GHC.Word
+  ( Word8
   )
 
 import qualified Data.Set as Set
@@ -20,6 +41,7 @@ import Test.QuickCheck
   , Arbitrary(arbitrary)
   , Gen
   , forAll
+  , suchThatMap
   , vectorOf
   , property
   , collect
@@ -53,6 +75,7 @@ import Data.List
 import Data.Map.Strict
   ( Map
   , toList
+  , lookup
   )
 
 import Storage
@@ -63,6 +86,8 @@ import Storage
   , AllocateBuckets(AllocateBuckets)
   , alreadyHave
   , allocated
+  , shareNumber
+  , toInteger
   )
 
 import Backend
@@ -77,6 +102,12 @@ import MemoryBackend
   ( memoryBackend
   )
 
+positiveIntegers :: Gen Integer
+positiveIntegers = suchThatMap (arbitrary :: Gen Integer) (\i -> Just $ abs i)
+
+instance Arbitrary ShareNumber where
+  arbitrary = suchThatMap positiveIntegers (\i -> shareNumber i)
+
 isUnique :: Ord a => [a] -> Bool
 isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList xs)
 
@@ -85,7 +116,6 @@ isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList x
 alreadyHavePlusAllocated :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> Size -> Property
 alreadyHavePlusAllocated b storageIndex shareNumbers size = collect shareNumbers $ monadicIO $ do
   pre (isUnique shareNumbers)
-  pre (all (>= 0) shareNumbers)
   backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
   assert $ (alreadyHave result) ++ (allocated result) == shareNumbers
@@ -94,28 +124,30 @@ alreadyHavePlusAllocated b storageIndex shareNumbers size = collect shareNumbers
 immutableWriteAndReadShare :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
 immutableWriteAndReadShare b storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
-  pre (all (>= 0) shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
   backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex allocate
   run $ writeShares backend storageIndex $ zip shareNumbers permutedShares
-  readShares <- run $ readShares backend storageIndex shareNumbers
-  assert $ permutedShares == readShares
+  readShares' <- run $ readShares backend storageIndex shareNumbers
+  when (permutedShares /= readShares') $
+    fail (show permutedShares ++ " != " ++ show readShares')
   where
     permuteShare :: ByteString -> ShareNumber -> ByteString
     permuteShare seed number =
-      Data.ByteString.map (xor $ fromIntegral number) seed
+      Data.ByteString.map xor' seed
+      where
+        xor' :: Word8 -> Word8
+        xor' = xor $ fromInteger $ toInteger number
 
     readShares :: Backend b => b -> StorageIndex -> [ShareNumber] -> IO [ShareData]
     readShares b storageIndex shareNumbers = do
       -- Map ShareNumber [ShareData]
       shares <- readImmutableShares b storageIndex shareNumbers [] []
-      let shareList = (toList shares) :: [(ShareNumber, [ShareData])]
-      let sortedShares = (sort shareList) :: [(ShareNumber, [ShareData])]
-      let shareDataLists = (Prelude.map snd sortedShares) :: [[ShareData]]
-      let shareData = (Prelude.map Data.ByteString.concat shareDataLists) :: [ShareData]
+      let maybeShares = (Prelude.map (flip lookup shares) shareNumbers)
+      let orderedShares = catMaybes maybeShares
+      let shareData = (Prelude.map Data.ByteString.concat orderedShares) :: [ShareData]
       return shareData
 
     writeShares :: Backend b => b -> StorageIndex -> [(ShareNumber, ShareData)] -> IO ()

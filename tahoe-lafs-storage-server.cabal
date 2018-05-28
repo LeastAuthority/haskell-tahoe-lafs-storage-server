@@ -27,6 +27,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , bytestring
+                     , scientific
                      , base64-bytestring
                      , text
                      , utf8-string
