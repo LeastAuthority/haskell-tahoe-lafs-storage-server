@@ -65,6 +65,8 @@ test-suite http-tests
                      , bytestring
                      , containers
                      , vector
+                     , directory
+                     , temporary
                      , hspec
                      , hspec-wai
                      , QuickCheck

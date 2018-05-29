@@ -11,6 +11,10 @@ import Control.Monad
   ( when
   )
 
+import Control.Exception
+  ( bracket
+  )
+
 import Data.Maybe
   ( catMaybes
   )
@@ -24,6 +28,15 @@ import GHC.Word
   )
 
 import qualified Data.Set as Set
+
+import System.Directory
+  ( removeDirectoryRecursive
+  )
+
+import System.IO.Temp
+  ( getCanonicalTemporaryDirectory
+  , createTempDirectory
+  )
 
 import Test.Hspec
   ( Spec
@@ -94,6 +107,10 @@ import Backend
 
 import MemoryBackend
   ( memoryBackend
+  )
+
+import FilesystemBackend
+  ( FilesystemBackend(FilesystemBackend)
   )
 
 positiveIntegers :: Gen Integer
@@ -257,4 +274,17 @@ makeSpec backend =
         forAll gen16String (mutableWriteAndEnumerateShares backend)
 
 spec :: Spec
-spec = makeSpec memoryBackend
+spec = context "backends" $
+  context "in-memory" $ (makeSpec memoryBackend)
+
+  context "filesystem" $ around withTemporaryDirectory $ \dirpath -> do
+  (makeSpec $ FilesystemBackend dirpath)
+
+withTemporaryDirectory :: (FilePath -> IO ()) -> IO ()
+withTemporaryDirectory =
+  bracket createTemporaryDirectory removeDirectoryRecursive
+  where
+    createTemporaryDirectory :: IO FilePath
+    createTemporaryDirectory = do
+      parent <- getCanonicalTemporaryDirectory
+      createTempDirectory parent "gbs-semanticspec"
