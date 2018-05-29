@@ -72,6 +72,7 @@ import Storage
   , ShareNumber
   , ShareData
   , AllocateBuckets(AllocateBuckets)
+  , SlotSecrets(..)
   , alreadyHave
   , allocated
   , shareNumber
@@ -84,7 +85,11 @@ import Backend
     , writeImmutableShare
     , readImmutableShares
     , getImmutableShareNumbers
+
+    , createMutableStorageIndex
+    , getMutableShareNumbers
     )
+  , writeMutableShare
   )
 
 import MemoryBackend
@@ -107,21 +112,56 @@ permuteShare seed number =
     xor' :: Word8 -> Word8
     xor' = xor $ fromInteger $ toInteger number
 
-writeShares :: Backend b => b -> StorageIndex -> [(ShareNumber, ShareData)] -> IO ()
-writeShares b storageIndex [] = return ()
-writeShares b storageIndex ((shareNumber, shareData):rest) = do
+writeShares
+  :: (ShareNumber -> ShareData -> Maybe a -> IO ())
+  -> [(ShareNumber, ShareData)] -> IO ()
+writeShares write [] = return ()
+writeShares write ((shareNumber, shareData):rest) = do
   -- TODO For now we'll do single complete writes.  Later try breaking up the data.
-  writeImmutableShare b storageIndex shareNumber shareData Nothing
-  writeShares b storageIndex rest
+  write shareNumber shareData Nothing
+  writeShares write rest
 
 -- In the result of creating an immutable storage index, the sum of
 -- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
-alreadyHavePlusAllocated :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> Size -> Property
-alreadyHavePlusAllocated b storageIndex shareNumbers size = monadicIO $ do
+alreadyHavePlusAllocatedImm
+  :: Backend b
+  => IO b             -- The backend on which to operate
+  -> StorageIndex     -- The storage index to use
+  -> [ShareNumber]    -- The share numbers to allocate
+  -> Size             -- The size of each share
+  -> Property
+alreadyHavePlusAllocatedImm b storageIndex shareNumbers size = monadicIO $ do
   pre (isUnique shareNumbers)
   backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
-  assert $ (alreadyHave result) ++ (allocated result) == shareNumbers
+  when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
+    $ fail (show (alreadyHave result)
+            ++ " ++ "
+            ++ show (allocated result)
+            ++ " /= "
+            ++ (show shareNumbers)
+           )
+
+-- In the result of creating a mutable storage index, the sum of
+-- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
+alreadyHavePlusAllocatedMut
+  :: Backend b
+  => IO b             -- The backend on which to operate
+  -> StorageIndex     -- The storage index to use
+  -> [ShareNumber]    -- The share numbers to allocate
+  -> Size             -- The size of each share
+  -> Property
+alreadyHavePlusAllocatedMut b storageIndex shareNumbers size = monadicIO $ do
+  pre (isUnique shareNumbers)
+  backend <- run b
+  result <- run $ createMutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
+  when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
+    $ fail (show (alreadyHave result)
+            ++ " ++ "
+            ++ show (allocated result)
+            ++ " /= "
+            ++ (show shareNumbers)
+           )
 
 -- The share numbers of immutable share data written to the shares of a given
 -- storage index can be retrieved.
@@ -133,8 +173,30 @@ immutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadic
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
   backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex allocate
-  run $ writeShares backend storageIndex $ zip shareNumbers permutedShares
+  run $ writeShares (writeImmutableShare backend storageIndex) (zip shareNumbers permutedShares)
   readShareNumbers <- run $ getImmutableShareNumbers backend storageIndex
+  let sreadShareNumbers = sort readShareNumbers
+  let sshareNumbers = sort shareNumbers
+  when (sreadShareNumbers /= sshareNumbers) $
+    fail (show sreadShareNumbers ++ " /= " ++ show sshareNumbers)
+
+-- The share numbers of mutable share data written to the shares of a given
+-- storage index can be retrieved.
+mutableWriteAndEnumerateShares :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
+mutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadicIO $ do
+  pre (isUnique shareNumbers)
+  let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
+  let size = fromIntegral (Data.ByteString.length shareSeed)
+  let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
+  let nullSecrets = SlotSecrets
+                    { writeEnabler = ""
+                    , leaseRenew = ""
+                    , leaseCancel = ""
+                    }
+  backend <- run b
+  result <- run $ createMutableStorageIndex backend storageIndex allocate
+  run $ writeShares (writeMutableShare backend nullSecrets storageIndex) (zip shareNumbers permutedShares)
+  readShareNumbers <- run $ getMutableShareNumbers backend storageIndex
   let sreadShareNumbers = sort readShareNumbers
   let sshareNumbers = sort shareNumbers
   when (sreadShareNumbers /= sshareNumbers) $
@@ -151,7 +213,7 @@ immutableWriteAndReadShare b storageIndex shareNumbers shareSeed = monadicIO $ d
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
   backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex allocate
-  run $ writeShares backend storageIndex $ zip shareNumbers permutedShares
+  run $ writeShares (writeImmutableShare backend storageIndex) (zip shareNumbers permutedShares)
   readShares' <- run $ readShares backend storageIndex shareNumbers
   when (permutedShares /= readShares') $
     fail (show permutedShares ++ " /= " ++ show readShares')
@@ -169,18 +231,30 @@ gen16String :: Gen String
 gen16String = vectorOf 16 arbitrary
 
 makeSpec :: Backend a => IO a -> Spec
-makeSpec backend = context "immutable" $ do
-  describe "Allocate an immutable storage index" $ do
-    it "accounts for all allocated share numbers" $ property $
-      forAll gen16String (alreadyHavePlusAllocated backend)
+makeSpec backend =
+  context "v1" $ do
 
-  describe "Write an immutable share" $ do
-    it "returns the written data when requested" $ property $
-      forAll gen16String (immutableWriteAndReadShare backend)
+  context "immutable" $ do
+    describe "allocate a storage index" $ do
+      it "accounts for all allocated share numbers" $ property $
+        forAll gen16String (alreadyHavePlusAllocatedImm backend)
 
-  describe "Write an immutable share" $ do
-    it "returns the share numbers that were written" $ property $
-      forAll gen16String (immutableWriteAndEnumerateShares backend)
+    describe "write a share" $ do
+      it "returns the share numbers that were written" $ property $
+        forAll gen16String (immutableWriteAndEnumerateShares backend)
+
+    describe "write a share" $ do
+      it "returns the written data when requested" $ property $
+        forAll gen16String (immutableWriteAndReadShare backend)
+
+  context "mutable" $ do
+    describe "allocate a storage index" $ do
+      it "accounts for all allocated share numbers" $ property $
+        forAll gen16String (alreadyHavePlusAllocatedMut backend)
+
+    describe "write a share" $ do
+      it "returns the share numbers that were written" $ property $
+        forAll gen16String (mutableWriteAndEnumerateShares backend)
 
 spec :: Spec
 spec = makeSpec memoryBackend

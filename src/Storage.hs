@@ -20,11 +20,14 @@ module Storage
   , Version1Parameters(..)
   , AllocateBuckets(..)
   , AllocationResult(..)
-  , ReadTestWriteVectors
+  , TestWriteVectors(..)
+  , WriteVector(..)
+  , ReadTestWriteVectors(..)
   , ReadTestWriteResult(..)
   , ReadVectors
   , ReadResult
   , CorruptionDetails
+  , SlotSecrets(..)
   , StorageAPI
   , api
   ) where

@@ -62,3 +62,9 @@ instance Backend NullBackend where
 
   readImmutableShares NullBackend _ _ _ _ =
     return mempty
+
+  -- createMutableStorageIndex NullBackend _ _ =
+  --   return AllocationResult
+  --   { alreadyHave = mempty
+  --   , allocated = mempty
+  --   }
