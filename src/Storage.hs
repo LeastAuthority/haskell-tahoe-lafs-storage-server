@@ -39,6 +39,7 @@ import Data.Scientific
 
 import Data.Text
   ( unpack
+  , pack
   )
 import Data.Text.Encoding
   ( decodeUtf8
@@ -62,6 +63,10 @@ import Data.Aeson
   , genericParseJSON
   , fieldLabelModifier
   )
+import Data.Aeson.Types
+  ( toJSONKeyText
+  )
+
 import Text.Read
   ( readMaybe
   )
@@ -121,7 +126,7 @@ newtype ShareNumber = ShareNumber Integer
   deriving
     ( Show, Generic
     , Eq, Ord
-    , ToJSON, FromJSON, ToJSONKey, FromJSONKey
+    , ToJSON, FromJSON, FromJSONKey
     , ToHttpApiData
     )
 
@@ -134,6 +139,9 @@ instance FromHttpApiData ShareNumber where
         Just s  -> Right s
   parseQueryParam = parseUrlPiece
   parseHeader     = parseUrlPiece . decodeUtf8
+
+instance ToJSONKey ShareNumber where
+  toJSONKey = toJSONKeyText (pack . show)
 
 shareNumber :: Integer -> Maybe ShareNumber
 shareNumber n =
