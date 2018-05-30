@@ -110,7 +110,8 @@ import Backend
   )
 
 import MemoryBackend
-  ( memoryBackend
+  ( MemoryBackend
+  , memoryBackend
   )
 
 import FilesystemBackend
@@ -296,7 +297,7 @@ spec = do
     Test.Hspec.before memoryBackend storageSpec
 
   Test.Hspec.context "filesystem" $
-    Test.Hspec.before filesystemBackend storageSpec
+    Test.Hspec.around (withBackend filesystemBackend) storageSpec
 
 filesystemBackend :: IO FilesystemBackend
 filesystemBackend = do
@@ -307,3 +308,19 @@ createTemporaryDirectory :: IO FilePath
 createTemporaryDirectory = do
   parent <- getCanonicalTemporaryDirectory
   createTempDirectory parent "gbs-semanticspec"
+
+class Mess m where
+  -- Cleanup resources belonging to m
+  cleanup :: m -> IO ()
+
+instance Mess FilesystemBackend where
+  cleanup (FilesystemBackend path) = removeDirectoryRecursive path
+
+instance Mess MemoryBackend where
+  cleanup _ = return ()
+
+withBackend :: (Mess b, Backend b) => IO b -> ((b -> IO ()) -> IO ())
+withBackend b = \action -> do
+  backend <- b
+  action backend
+  cleanup backend
