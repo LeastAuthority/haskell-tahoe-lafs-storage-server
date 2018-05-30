@@ -40,10 +40,14 @@ import System.IO.Temp
 
 import Test.Hspec
   ( Spec
+  , SpecWith
   , context
   , describe
   , it
   , shouldBe
+  , around
+  , before
+  , beforeWith
   )
 import Test.QuickCheck
   ( Property
@@ -142,14 +146,13 @@ writeShares write ((shareNumber, shareData):rest) = do
 -- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
 alreadyHavePlusAllocatedImm
   :: Backend b
-  => IO b             -- The backend on which to operate
+  => b                -- The backend on which to operate
   -> StorageIndex     -- The storage index to use
   -> [ShareNumber]    -- The share numbers to allocate
   -> Size             -- The size of each share
   -> Property
-alreadyHavePlusAllocatedImm b storageIndex shareNumbers size = monadicIO $ do
+alreadyHavePlusAllocatedImm backend storageIndex shareNumbers size = monadicIO $ do
   pre (isUnique shareNumbers)
-  backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
   when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
     $ fail (show (alreadyHave result)
@@ -163,14 +166,13 @@ alreadyHavePlusAllocatedImm b storageIndex shareNumbers size = monadicIO $ do
 -- ``alreadyHave`` and ``allocated`` equals ``shareNumbers`` from the input.
 alreadyHavePlusAllocatedMut
   :: Backend b
-  => IO b             -- The backend on which to operate
+  => b                -- The backend on which to operate
   -> StorageIndex     -- The storage index to use
   -> [ShareNumber]    -- The share numbers to allocate
   -> Size             -- The size of each share
   -> Property
-alreadyHavePlusAllocatedMut b storageIndex shareNumbers size = monadicIO $ do
+alreadyHavePlusAllocatedMut backend storageIndex shareNumbers size = monadicIO $ do
   pre (isUnique shareNumbers)
-  backend <- run b
   result <- run $ createMutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
   when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
     $ fail (show (alreadyHave result)
@@ -182,13 +184,18 @@ alreadyHavePlusAllocatedMut b storageIndex shareNumbers size = monadicIO $ do
 
 -- The share numbers of immutable share data written to the shares of a given
 -- storage index can be retrieved.
-immutableWriteAndEnumerateShares :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
-immutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadicIO $ do
+immutableWriteAndEnumerateShares
+  :: Backend b
+  => b
+  -> StorageIndex
+  -> [ShareNumber]
+  -> ByteString
+  -> Property
+immutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
-  backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex allocate
   run $ writeShares (writeImmutableShare backend storageIndex) (zip shareNumbers permutedShares)
   readShareNumbers <- run $ getImmutableShareNumbers backend storageIndex
@@ -199,8 +206,14 @@ immutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadic
 
 -- The share numbers of mutable share data written to the shares of a given
 -- storage index can be retrieved.
-mutableWriteAndEnumerateShares :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
-mutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadicIO $ do
+mutableWriteAndEnumerateShares
+  :: Backend b
+  => b
+  -> StorageIndex
+  -> [ShareNumber]
+  -> ByteString
+  -> Property
+mutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
@@ -210,7 +223,6 @@ mutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadicIO
                     , leaseRenew = ""
                     , leaseCancel = ""
                     }
-  backend <- run b
   result <- run $ createMutableStorageIndex backend storageIndex allocate
   run $ writeShares (writeMutableShare backend nullSecrets storageIndex) (zip shareNumbers permutedShares)
   readShareNumbers <- run $ getMutableShareNumbers backend storageIndex
@@ -222,13 +234,18 @@ mutableWriteAndEnumerateShares b storageIndex shareNumbers shareSeed = monadicIO
 -- Immutable share data written to the shares of a given storage index can be
 -- retrieved verbatim and associated with the same share numbers as were
 -- specified during writing.
-immutableWriteAndReadShare :: Backend b => IO b -> StorageIndex -> [ShareNumber] -> ByteString -> Property
-immutableWriteAndReadShare b storageIndex shareNumbers shareSeed = monadicIO $ do
+immutableWriteAndReadShare
+  :: Backend b
+  => b
+  -> StorageIndex
+  -> [ShareNumber]
+  -> ByteString
+  -> Property
+immutableWriteAndReadShare backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
-  backend <- run b
   result <- run $ createImmutableStorageIndex backend storageIndex allocate
   run $ writeShares (writeImmutableShare backend storageIndex) (zip shareNumbers permutedShares)
   readShares' <- run $ readShares backend storageIndex shareNumbers
@@ -247,44 +264,46 @@ immutableWriteAndReadShare b storageIndex shareNumbers shareSeed = monadicIO $ d
 gen16String :: Gen String
 gen16String = vectorOf 16 arbitrary
 
-makeSpec :: Backend a => IO a -> Spec
-makeSpec backend =
+-- The specification for a storage backend.
+storageSpec :: Backend b => SpecWith b
+storageSpec =
   context "v1" $ do
-
   context "immutable" $ do
-    describe "allocate a storage index" $ do
-      it "accounts for all allocated share numbers" $ property $
-        forAll gen16String (alreadyHavePlusAllocatedImm backend)
+    describe "allocate a storage index" $
+      it "accounts for all allocated share numbers" $ \backend -> property $
+      forAll gen16String (alreadyHavePlusAllocatedImm backend)
 
     describe "write a share" $ do
-      it "returns the share numbers that were written" $ property $
+      it "returns the share numbers that were written" $ \backend -> property $
         forAll gen16String (immutableWriteAndEnumerateShares backend)
 
     describe "write a share" $ do
-      it "returns the written data when requested" $ property $
+      it "returns the written data when requested" $ \backend -> property $
         forAll gen16String (immutableWriteAndReadShare backend)
 
   context "mutable" $ do
     describe "allocate a storage index" $ do
-      it "accounts for all allocated share numbers" $ property $
+      it "accounts for all allocated share numbers" $ \backend -> property $
         forAll gen16String (alreadyHavePlusAllocatedMut backend)
 
     describe "write a share" $ do
-      it "returns the share numbers that were written" $ property $
+      it "returns the share numbers that were written" $ \backend -> property $
         forAll gen16String (mutableWriteAndEnumerateShares backend)
 
 spec :: Spec
-spec = context "backends" $
-  context "in-memory" $ (makeSpec memoryBackend)
+spec = do
+  Test.Hspec.context "memory" $
+    Test.Hspec.before memoryBackend storageSpec
 
-  context "filesystem" $ around withTemporaryDirectory $ \dirpath -> do
-  (makeSpec $ FilesystemBackend dirpath)
+  Test.Hspec.context "filesystem" $
+    Test.Hspec.before filesystemBackend storageSpec
 
-withTemporaryDirectory :: (FilePath -> IO ()) -> IO ()
-withTemporaryDirectory =
-  bracket createTemporaryDirectory removeDirectoryRecursive
-  where
-    createTemporaryDirectory :: IO FilePath
-    createTemporaryDirectory = do
-      parent <- getCanonicalTemporaryDirectory
-      createTempDirectory parent "gbs-semanticspec"
+filesystemBackend :: IO FilesystemBackend
+filesystemBackend = do
+  path <- createTemporaryDirectory
+  return $ FilesystemBackend path
+
+createTemporaryDirectory :: IO FilePath
+createTemporaryDirectory = do
+  parent <- getCanonicalTemporaryDirectory
+  createTempDirectory parent "gbs-semanticspec"

@@ -65,6 +65,9 @@ data MemoryBackend = MemoryBackend
   , buckets :: IORef BucketStorage -- In-progress immutable share uploads
   }
 
+instance Show MemoryBackend where
+  show _ = "<MemoryBackend>"
+
 instance Backend MemoryBackend where
   version backend = do
     totalSize <- totalShareSize backend
