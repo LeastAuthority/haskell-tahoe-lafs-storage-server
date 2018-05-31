@@ -109,6 +109,11 @@ import Backend
   , writeMutableShare
   )
 
+-- We also get the Arbitrary ShareNumber instance from here.
+import Lib
+  ( genStorageIndex
+  )
+
 import MemoryBackend
   ( MemoryBackend
   , memoryBackend
@@ -117,12 +122,6 @@ import MemoryBackend
 import FilesystemBackend
   ( FilesystemBackend(FilesystemBackend)
   )
-
-positiveIntegers :: Gen Integer
-positiveIntegers = suchThatMap (arbitrary :: Gen Integer) (\i -> Just $ abs i)
-
-instance Arbitrary ShareNumber where
-  arbitrary = suchThatMap positiveIntegers (\i -> shareNumber i)
 
 isUnique :: Ord a => [a] -> Bool
 isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList xs)
@@ -262,9 +261,6 @@ immutableWriteAndReadShare backend storageIndex shareNumbers shareSeed = monadic
       let shareData = (Prelude.map Data.ByteString.concat orderedShares) :: [ShareData]
       return shareData
 
-gen16String :: Gen String
-gen16String = vectorOf 16 arbitrary
-
 -- The specification for a storage backend.
 storageSpec :: Backend b => SpecWith b
 storageSpec =
@@ -272,24 +268,24 @@ storageSpec =
   context "immutable" $ do
     describe "allocate a storage index" $
       it "accounts for all allocated share numbers" $ \backend -> property $
-      forAll gen16String (alreadyHavePlusAllocatedImm backend)
+      forAll genStorageIndex (alreadyHavePlusAllocatedImm backend)
 
     describe "write a share" $ do
       it "returns the share numbers that were written" $ \backend -> property $
-        forAll gen16String (immutableWriteAndEnumerateShares backend)
+        forAll genStorageIndex (immutableWriteAndEnumerateShares backend)
 
     describe "write a share" $ do
       it "returns the written data when requested" $ \backend -> property $
-        forAll gen16String (immutableWriteAndReadShare backend)
+        forAll genStorageIndex (immutableWriteAndReadShare backend)
 
   context "mutable" $ do
     describe "allocate a storage index" $ do
       it "accounts for all allocated share numbers" $ \backend -> property $
-        forAll gen16String (alreadyHavePlusAllocatedMut backend)
+        forAll genStorageIndex (alreadyHavePlusAllocatedMut backend)
 
     describe "write a share" $ do
       it "returns the share numbers that were written" $ \backend -> property $
-        forAll gen16String (mutableWriteAndEnumerateShares backend)
+        forAll genStorageIndex (mutableWriteAndEnumerateShares backend)
 
 spec :: Spec
 spec = do
