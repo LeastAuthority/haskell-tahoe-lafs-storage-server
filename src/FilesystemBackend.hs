@@ -1,5 +1,6 @@
 module FilesystemBackend
   ( FilesystemBackend(FilesystemBackend)
+  , partitionM
   ) where
 
 import System.Posix.StatVFS
@@ -62,3 +63,16 @@ instance Backend FilesystemBackend where
 
   writeImmutableShare (FilesystemBackend path) storage_index share_number share_data content_ranges =
     return mempty
+partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
+partitionM pred items = do
+  (yes, no) <- partitionM' pred items [] []
+  -- re-reverse them to maintain input order
+  return (reverse yes, reverse no)
+  where
+    partitionM' pred [] yes no = return (yes, no)
+    partitionM' pred (item:rest) yes no = do
+      result <- pred item
+      if result then
+        partitionM' pred rest (item:yes) no
+        else
+        partitionM' pred rest yes (item:no)
