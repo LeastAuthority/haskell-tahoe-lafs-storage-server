@@ -40,6 +40,8 @@ import Storage
   , AllocationResult(..)
   )
 
+import qualified Storage
+
 import Backend
   ( Backend(..)
   )
@@ -110,11 +112,11 @@ haveShare (FilesystemBackend path) storageIndex shareNumber =
 
 pathOf :: FilePath -> StorageIndex -> ShareNumber -> FilePath
 pathOf root storageIndex shareNumber =
-  root </> "shares" </> storageStartSegment storageIndex </> storageIndex </> show shareNumber
+  root </> "shares" </> storageStartSegment storageIndex </> storageIndex </> (show $ Storage.toInteger shareNumber)
 
 incomingPathOf :: FilePath -> StorageIndex -> ShareNumber -> FilePath
 incomingPathOf root storageIndex shareNumber =
-  root </> "shares" </> "incoming" </> storageStartSegment storageIndex </> storageIndex </> show shareNumber
+  root </> "shares" </> "incoming" </> storageStartSegment storageIndex </> storageIndex </> (show $ Storage.toInteger shareNumber)
 
 storageStartSegment :: StorageIndex -> FilePath
 storageStartSegment [] = fail "illegal short storage index"

@@ -2,6 +2,10 @@ module MiscSpec
   ( spec
   ) where
 
+import Prelude hiding
+  ( toInteger
+  )
+
 import Text.Printf
   ( printf
   )
@@ -11,6 +15,7 @@ import Test.Hspec
   , describe
   , it
   , shouldBe
+  , shouldNotBe
   , shouldSatisfy
   )
 
@@ -22,6 +27,10 @@ import Test.QuickCheck
   , property
   , forAll
   , vectorOf
+  )
+
+import Storage
+  ( toInteger
   )
 
 -- We also get the Arbitrary ShareNumber instance from here.
@@ -60,7 +69,26 @@ spec = do
     (\storageIndex shareNumber ->
        pathOf "/foo" storageIndex shareNumber
        `shouldBe`
-       (printf "/foo/shares/%s/%s/%s" (take 2 storageIndex) storageIndex (show shareNumber))
+       (printf "/foo/shares/%s/%s/%d" (take 2 storageIndex) storageIndex (toInteger shareNumber))
+    )
+
+  describe "incomingPathOf" $
+    it "returns a path reflecting the storage index and share number" $ property $
+    forAll genStorageIndex
+    (\storageIndex shareNumber ->
+       incomingPathOf "/foo" storageIndex shareNumber
+       `shouldBe`
+       (printf "/foo/shares/incoming/%s/%s/%d" (take 2 storageIndex) storageIndex (toInteger shareNumber))
+    )
+
+  describe "incomingPathOf vs pathOf" $
+    it "returns different paths" $ property $
+    forAll genStorageIndex
+    (\storageIndex shareNumber ->
+       let path = pathOf "/foo" storageIndex shareNumber
+           incoming = incomingPathOf "/foo" storageIndex shareNumber
+       in
+         path `shouldNotBe` incoming
     )
 
   describe "base32 round-trip" $
