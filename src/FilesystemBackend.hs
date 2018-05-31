@@ -138,13 +138,13 @@ allocatev
   -> StorageIndex
   -> [ShareNumber]
   -> IO ()
-allocatev _ _ [] = return ()
-allocatev (FilesystemBackend path) storageIndex (shareNumber:rest) = do
-  let path = incomingPathOf path storageIndex shareNumber in do
-    putStrLn $ printf "allocating %s" path
-    writeFile path ""
-    putStrLn $ printf "done"
-    allocatev (FilesystemBackend path) storageIndex rest
+allocatev backend storageIndex [] = return ()
+allocatev (FilesystemBackend root) storageIndex (shareNumber:rest) = do
+  let sharePath = incomingPathOf root storageIndex shareNumber in
+    do
+      writeFile sharePath ""
+      allocatev (FilesystemBackend root) storageIndex rest
+      return ()
 
 partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
 partitionM pred items = do
