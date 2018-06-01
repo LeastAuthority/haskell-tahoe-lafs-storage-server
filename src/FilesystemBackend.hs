@@ -132,9 +132,9 @@ instance Backend FilesystemBackend where
       , allocated = allocated
       }
 
-    -- TODO Handle ranges.
-    -- TODO Make sure the share storage was allocated.
-    -- TODO Don't allow target of rename to exist.
+  -- TODO Handle ranges.
+  -- TODO Make sure the share storage was allocated.
+  -- TODO Don't allow target of rename to exist.
   writeImmutableShare (FilesystemBackend root) storageIndex shareNumber shareData Nothing = do
     let incomingSharePath = incomingPathOf root storageIndex shareNumber
     writeFile incomingSharePath shareData
@@ -153,6 +153,8 @@ instance Backend FilesystemBackend where
             Right children   -> children
     return $ catMaybes $ map (shareNumber . read) sharePaths
 
+  -- TODO Handle ranges.
+  -- TODO Make sure the share storage was allocated.
   readImmutableShares (FilesystemBackend root) storageIndex shareNumbers [] [] =
     let storageIndexPath = pathOfStorageIndex root storageIndex
         only x = [x]
