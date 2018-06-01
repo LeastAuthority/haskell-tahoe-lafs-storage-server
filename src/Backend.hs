@@ -43,7 +43,17 @@ class Backend b where
   writeImmutableShare :: b -> StorageIndex -> ShareNumber -> ShareData -> Maybe ByteRanges -> IO ()
   adviseCorruptImmutableShare :: b -> StorageIndex -> ShareNumber -> CorruptionDetails -> IO ()
   getImmutableShareNumbers :: b -> StorageIndex -> IO [ShareNumber]
+
   readImmutableShares :: b -> StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> IO ReadResult
+
+  -- Provide a default for requesting all shares.
+  readImmutableShares backend storageIndex [] offsets sizes = do
+    shareNumbers <- getImmutableShareNumbers backend storageIndex
+    case shareNumbers of
+      [] ->
+        return mempty
+      _  ->
+        readImmutableShares backend storageIndex shareNumbers offsets sizes
 
   createMutableStorageIndex :: b -> StorageIndex -> AllocateBuckets -> IO AllocationResult
   readvAndTestvAndWritev :: b -> StorageIndex -> ReadTestWriteVectors -> IO ReadTestWriteResult

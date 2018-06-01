@@ -142,14 +142,6 @@ instance Backend MemoryBackend where
       Nothing       -> []
       Just shares'' -> keys shares''
 
-  readImmutableShares backend storageIndex [] offsets sizes = do
-    shareNumbers <- getImmutableShareNumbers backend storageIndex
-    case shareNumbers of
-      [] ->
-        return mempty
-      _  ->
-        readImmutableShares backend storageIndex shareNumbers offsets sizes
-
   readImmutableShares backend storageIndex shareNumbers [] [] = do
     shares' <- readIORef $ immutableShares backend
     let result = case lookup storageIndex shares' of
