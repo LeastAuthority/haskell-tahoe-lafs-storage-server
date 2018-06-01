@@ -1,21 +1,53 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module FilesystemBackend
   ( FilesystemBackend(FilesystemBackend)
   , storageStartSegment
   , partitionM
-  , pathOf
+  , pathOfShare
   , incomingPathOf
   ) where
 
+import Prelude hiding
+  ( writeFile
+  , readFile
+  )
+
 import Text.Printf
   ( printf
+  )
+
+import Data.ByteString
+  ( writeFile
+  , readFile
+  )
+
+import Control.Exception
+  ( tryJust
+  )
+
+import Data.Maybe
+  ( catMaybes
   )
 
 import Data.List
   ( partition
   )
 
+import Data.Map.Strict
+  ( fromList
+  )
+
+import System.IO
+  ( openFile
+  )
+import System.IO.Error
+  ( isDoesNotExistError
+  )
+
 import System.FilePath
   ( FilePath
+  , takeDirectory
   , (</>)
   )
 import System.Posix.StatVFS
@@ -25,6 +57,9 @@ import System.Posix.StatVFS
 
 import System.Directory
   ( doesPathExist
+  , createDirectoryIfMissing
+  , renameFile
+  , listDirectory
   )
 
 import Storage
@@ -38,6 +73,7 @@ import Storage
   , Version1Parameters(..)
   , AllocateBuckets(..)
   , AllocationResult(..)
+  , shareNumber
   )
 
 import qualified Storage
@@ -90,16 +126,40 @@ instance Backend FilesystemBackend where
   createImmutableStorageIndex backend storageIndex params = do
     let exists = haveShare backend storageIndex
     (alreadyHave, allocated) <- partitionM exists (shareNumbers params)
-    putStrLn $ printf "Partitioned %s have: %s allocating %s" (show $ shareNumbers params) (show alreadyHave) (show allocated)
-    putStrLn "allocating"
     allocatev backend storageIndex allocated
     return AllocationResult
       { alreadyHave = alreadyHave
       , allocated = allocated
       }
 
-  writeImmutableShare (FilesystemBackend path) storageIndex shareNumber shareData Nothing =
-    return mempty
+    -- TODO Handle ranges.
+    -- TODO Make sure the share storage was allocated.
+    -- TODO Don't allow target of rename to exist.
+  writeImmutableShare (FilesystemBackend root) storageIndex shareNumber shareData Nothing = do
+    let incomingSharePath = incomingPathOf root storageIndex shareNumber
+    writeFile incomingSharePath shareData
+    let finalSharePath = pathOfShare root storageIndex shareNumber
+    let createParents = True
+    createDirectoryIfMissing createParents $ takeDirectory finalSharePath
+    renameFile incomingSharePath finalSharePath
+
+  getImmutableShareNumbers (FilesystemBackend root) storageIndex = do
+    let storageIndexPath = pathOfStorageIndex root storageIndex
+    storageIndexChildren <-
+      tryJust (Just . isDoesNotExistError) $ listDirectory storageIndexPath
+    let sharePaths =
+          case storageIndexChildren of
+            Left _           -> []
+            Right children   -> children
+    return $ catMaybes $ map (shareNumber . read) sharePaths
+
+  readImmutableShares (FilesystemBackend root) storageIndex shareNumbers [] [] =
+    let storageIndexPath = pathOfStorageIndex root storageIndex
+        only x = [x]
+        readShare = readFile . (pathOfShare root storageIndex) in
+      do
+        allShareData <- sequence $ map readShare shareNumbers
+        return $ fromList $ zip shareNumbers (map only allShareData)
 
 -- Does the given backend have the complete share indicated?
 haveShare
@@ -108,11 +168,19 @@ haveShare
   -> ShareNumber       -- The number of the share
   -> IO Bool           -- True if it has the share, False otherwise.
 haveShare (FilesystemBackend path) storageIndex shareNumber =
-  doesPathExist $ pathOf path storageIndex shareNumber
+  doesPathExist $ pathOfShare path storageIndex shareNumber
 
-pathOf :: FilePath -> StorageIndex -> ShareNumber -> FilePath
-pathOf root storageIndex shareNumber =
-  root </> "shares" </> storageStartSegment storageIndex </> storageIndex </> (show $ Storage.toInteger shareNumber)
+pathOfStorageIndex
+  :: FilePath      -- The storage backend root path
+  -> StorageIndex  -- The storage index to consider
+  -> FilePath      -- The path to the directory containing shares for the
+                   -- storage index.
+pathOfStorageIndex root storageIndex =
+  root </> "shares" </> storageStartSegment storageIndex </> storageIndex
+
+pathOfShare :: FilePath -> StorageIndex -> ShareNumber -> FilePath
+pathOfShare root storageIndex shareNumber =
+  pathOfStorageIndex root storageIndex </> (show $ Storage.toInteger shareNumber)
 
 incomingPathOf :: FilePath -> StorageIndex -> ShareNumber -> FilePath
 incomingPathOf root storageIndex shareNumber =
@@ -139,9 +207,13 @@ allocatev
   -> [ShareNumber]
   -> IO ()
 allocatev backend storageIndex [] = return ()
-allocatev (FilesystemBackend root) storageIndex (shareNumber:rest) = do
-  let sharePath = incomingPathOf root storageIndex shareNumber in
+allocatev (FilesystemBackend root) storageIndex (shareNumber:rest) =
+  let sharePath = incomingPathOf root storageIndex shareNumber
+      shareDirectory = takeDirectory sharePath
+      createParents = True
+  in
     do
+      createDirectoryIfMissing createParents shareDirectory
       writeFile sharePath ""
       allocatev (FilesystemBackend root) storageIndex rest
       return ()

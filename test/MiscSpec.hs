@@ -43,7 +43,7 @@ import Lib
 import FilesystemBackend
   ( partitionM
   , storageStartSegment
-  , pathOf
+  , pathOfShare
   , incomingPathOf
   )
 
@@ -63,11 +63,11 @@ spec = do
     it "returns a string of length 2" $ property $
     forAll genStorageIndex (\storageIndex -> length (storageStartSegment storageIndex) `shouldBe` 2)
 
-  describe "pathOf" $
+  describe "pathOfShare" $
     it "returns a path reflecting the storage index and share number" $ property $
     forAll genStorageIndex
     (\storageIndex shareNumber ->
-       pathOf "/foo" storageIndex shareNumber
+       pathOfShare "/foo" storageIndex shareNumber
        `shouldBe`
        (printf "/foo/shares/%s/%s/%d" (take 2 storageIndex) storageIndex (toInteger shareNumber))
     )
@@ -81,11 +81,11 @@ spec = do
        (printf "/foo/shares/incoming/%s/%s/%d" (take 2 storageIndex) storageIndex (toInteger shareNumber))
     )
 
-  describe "incomingPathOf vs pathOf" $
+  describe "incomingPathOf vs pathOfShare" $
     it "returns different paths" $ property $
     forAll genStorageIndex
     (\storageIndex shareNumber ->
-       let path = pathOf "/foo" storageIndex shareNumber
+       let path = pathOfShare "/foo" storageIndex shareNumber
            incoming = incomingPathOf "/foo" storageIndex shareNumber
        in
          path `shouldNotBe` incoming
