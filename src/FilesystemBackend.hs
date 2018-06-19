@@ -20,6 +20,7 @@ import Text.Printf
 import Data.ByteString
   ( writeFile
   , readFile
+  , hPut
   )
 
 import Control.Exception
@@ -36,10 +37,15 @@ import Data.List
 
 import Data.Map.Strict
   ( fromList
+  , toList
   )
 
 import System.IO
-  ( openFile
+  ( Handle
+  , IOMode(ReadWriteMode)
+  , SeekMode(AbsoluteSeek)
+  , withBinaryFile
+  , hSeek
   )
 import System.IO.Error
   ( isDoesNotExistError
@@ -69,6 +75,10 @@ import Storage
   , StorageIndex
   , ShareNumber
   , ShareData
+  , WriteVector(WriteVector)
+  , TestWriteVectors(write)
+  , ReadTestWriteVectors(ReadTestWriteVectors)
+  , ReadTestWriteResult(ReadTestWriteResult, success, readData)
   , ApplicationVersion(..)
   , Version1Parameters(..)
   , AllocateBuckets(..)
@@ -162,6 +172,55 @@ instance Backend FilesystemBackend where
       do
         allShareData <- sequence $ map readShare shareNumbers
         return $ fromList $ zip shareNumbers (map only allShareData)
+
+  createMutableStorageIndex = createImmutableStorageIndex
+
+  getMutableShareNumbers = getImmutableShareNumbers
+
+  readvAndTestvAndWritev
+    (FilesystemBackend root)
+    storageIndex
+    (ReadTestWriteVectors secrets testWritev readv) = do
+    -- TODO implement readv and testv parts.  implement secrets part.
+    mapM_ (applyWriteVectors root storageIndex) $ toList testWritev
+    return ReadTestWriteResult
+      { success = True
+      , readData = mempty
+      }
+
+    where
+      applyWriteVectors
+        :: FilePath
+        -> StorageIndex
+        -> (ShareNumber, TestWriteVectors)
+        -> IO ()
+      applyWriteVectors root storageIndex (shareNumber, testWriteVectors) =
+        mapM_ (applyShareWrite root storageIndex shareNumber) (write testWriteVectors)
+
+      applyShareWrite
+        :: FilePath
+        -> StorageIndex
+        -> ShareNumber
+        -> WriteVector
+        -> IO ()
+      applyShareWrite root storageIndex shareNumber (WriteVector offset shareData) =
+        let sharePath = pathOfShare root storageIndex shareNumber
+            createParents = True
+        in
+          do
+            createDirectoryIfMissing createParents $ takeDirectory sharePath
+            withBinaryFile sharePath ReadWriteMode (writeAtPosition offset shareData)
+        where
+          writeAtPosition
+            :: Offset
+            -> ShareData
+            -> Handle
+            -> IO ()
+          writeAtPosition offset shareData handle = do
+            hSeek handle AbsoluteSeek offset
+            hPut handle shareData
+
+
 
 -- Does the given backend have the complete share indicated?
 haveShare
