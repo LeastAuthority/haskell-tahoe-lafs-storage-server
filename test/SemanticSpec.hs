@@ -216,34 +216,6 @@ immutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = m
   when (sreadShareNumbers /= sshareNumbers) $
     fail (show sreadShareNumbers ++ " /= " ++ show sshareNumbers)
 
--- The share numbers of mutable share data written to the shares of a given
--- storage index can be retrieved.
-mutableWriteAndEnumerateShares
-  :: Backend b
-  => b
-  -> StorageIndex
-  -> [ShareNumber]
-  -> ByteString
-  -> Property
-mutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
-  pre (isUnique shareNumbers)
-  pre (hasElements shareNumbers)
-  let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
-  let size = fromIntegral (Data.ByteString.length shareSeed)
-  let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
-  let nullSecrets = SlotSecrets
-                    { writeEnabler = ""
-                    , leaseRenew = ""
-                    , leaseCancel = ""
-                    }
-  result <- run $ createMutableStorageIndex backend storageIndex allocate
-  run $ writeShares (writeMutableShare backend nullSecrets storageIndex) (zip shareNumbers permutedShares)
-  readShareNumbers <- run $ getMutableShareNumbers backend storageIndex
-  let sreadShareNumbers = sort readShareNumbers
-  let sshareNumbers = sort shareNumbers
-  when (sreadShareNumbers /= sshareNumbers) $
-    fail (show sreadShareNumbers ++ " /= " ++ show sshareNumbers)
-
 -- Immutable share data written to the shares of a given storage index cannot
 -- be rewritten by a subsequent writeImmutableShare operation.
 immutableWriteAndRewriteShare
@@ -297,6 +269,34 @@ immutableWriteAndReadShare backend storageIndex shareNumbers shareSeed = monadic
       let orderedShares = catMaybes maybeShares
       let shareData = (Prelude.map Data.ByteString.concat orderedShares) :: [ShareData]
       return shareData
+
+-- The share numbers of mutable share data written to the shares of a given
+-- storage index can be retrieved.
+mutableWriteAndEnumerateShares
+  :: Backend b
+  => b
+  -> StorageIndex
+  -> [ShareNumber]
+  -> ByteString
+  -> Property
+mutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
+  pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
+  let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
+  let size = fromIntegral (Data.ByteString.length shareSeed)
+  let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
+  let nullSecrets = SlotSecrets
+                    { writeEnabler = ""
+                    , leaseRenew = ""
+                    , leaseCancel = ""
+                    }
+  result <- run $ createMutableStorageIndex backend storageIndex allocate
+  run $ writeShares (writeMutableShare backend nullSecrets storageIndex) (zip shareNumbers permutedShares)
+  readShareNumbers <- run $ getMutableShareNumbers backend storageIndex
+  let sreadShareNumbers = sort readShareNumbers
+  let sshareNumbers = sort shareNumbers
+  when (sreadShareNumbers /= sshareNumbers) $
+    fail (show sreadShareNumbers ++ " /= " ++ show sshareNumbers)
 
 -- The specification for a storage backend.
 storageSpec :: Backend b => SpecWith b
