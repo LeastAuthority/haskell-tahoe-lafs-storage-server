@@ -126,6 +126,10 @@ import FilesystemBackend
 isUnique :: Ord a => [a] -> Bool
 isUnique xs = Prelude.length xs == (Prelude.length $ Set.toList $ Set.fromList xs)
 
+hasElements :: [a] -> Bool
+hasElements [] = False
+hasElements xs = True
+
 permuteShare :: ByteString -> ShareNumber -> ByteString
 permuteShare seed number =
   Data.ByteString.map xor' seed
@@ -153,6 +157,7 @@ alreadyHavePlusAllocatedImm
   -> Property
 alreadyHavePlusAllocatedImm backend storageIndex shareNumbers size = monadicIO $ do
   pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
   result <- run $ createImmutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
   when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
     $ fail (show (alreadyHave result)
@@ -173,6 +178,7 @@ alreadyHavePlusAllocatedMut
   -> Property
 alreadyHavePlusAllocatedMut backend storageIndex shareNumbers size = monadicIO $ do
   pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
   result <- run $ createMutableStorageIndex backend storageIndex $ AllocateBuckets "renew" "cancel" shareNumbers size
   when ((alreadyHave result) ++ (allocated result) /= shareNumbers)
     $ fail (show (alreadyHave result)
@@ -193,6 +199,7 @@ immutableWriteAndEnumerateShares
   -> Property
 immutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
@@ -215,6 +222,7 @@ mutableWriteAndEnumerateShares
   -> Property
 mutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
@@ -243,6 +251,7 @@ immutableWriteAndReadShare
   -> Property
 immutableWriteAndReadShare backend storageIndex shareNumbers shareSeed = monadicIO $ do
   pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
   let permutedShares = Prelude.map (permuteShare shareSeed) shareNumbers
   let size = fromIntegral (Data.ByteString.length shareSeed)
   let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
