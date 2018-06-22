@@ -25,6 +25,7 @@ import Data.ByteString
 
 import Control.Exception
   ( tryJust
+  , throwIO
   )
 
 import Data.Maybe
@@ -89,7 +90,8 @@ import Storage
 import qualified Storage
 
 import Backend
-  ( Backend(..)
+  ( ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
+  , Backend(..)
   )
 
 data FilesystemBackend = FilesystemBackend FilePath
@@ -145,13 +147,19 @@ instance Backend FilesystemBackend where
   -- TODO Handle ranges.
   -- TODO Make sure the share storage was allocated.
   -- TODO Don't allow target of rename to exist.
+  -- TODO Concurrency
   writeImmutableShare (FilesystemBackend root) storageIndex shareNumber shareData Nothing = do
-    let incomingSharePath = incomingPathOf root storageIndex shareNumber
-    writeFile incomingSharePath shareData
-    let finalSharePath = pathOfShare root storageIndex shareNumber
-    let createParents = True
-    createDirectoryIfMissing createParents $ takeDirectory finalSharePath
-    renameFile incomingSharePath finalSharePath
+    alreadyHave <- haveShare (FilesystemBackend root) storageIndex shareNumber
+    if alreadyHave
+      then throwIO ImmutableShareAlreadyWritten
+      else
+      do
+        let finalSharePath = pathOfShare root storageIndex shareNumber
+        let incomingSharePath = incomingPathOf root storageIndex shareNumber
+        writeFile incomingSharePath shareData
+        let createParents = True
+        createDirectoryIfMissing createParents $ takeDirectory finalSharePath
+        renameFile incomingSharePath finalSharePath
 
   getImmutableShareNumbers (FilesystemBackend root) storageIndex = do
     let storageIndexPath = pathOfStorageIndex root storageIndex
