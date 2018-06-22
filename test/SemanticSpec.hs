@@ -279,11 +279,10 @@ storageSpec =
       it "accounts for all allocated share numbers" $ \backend -> property $
       forAll genStorageIndex (alreadyHavePlusAllocatedImm backend)
 
-    describe "write a share" $ do
+    context "write a share" $ do
       it "returns the share numbers that were written" $ \backend -> property $
         forAll genStorageIndex (immutableWriteAndEnumerateShares backend)
 
-    describe "write a share" $ do
       it "returns the written data when requested" $ \backend -> property $
         forAll genStorageIndex (immutableWriteAndReadShare backend)
 
