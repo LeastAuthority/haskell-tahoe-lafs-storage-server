@@ -9,11 +9,16 @@ import Prelude hiding
   , filter
   )
 
+import Control.Exception
+  ( throwIO
+  )
+
 import Data.IORef
  ( IORef
  , newIORef
  , readIORef
  , modifyIORef
+ , atomicModifyIORef'
  )
 
 import Data.Map.Strict
@@ -54,6 +59,7 @@ import Storage
 
 import Backend
   ( Backend(..)
+  , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   )
 
 type ShareStorage = Map StorageIndex (Map ShareNumber ShareData)
@@ -128,10 +134,19 @@ instance Backend MemoryBackend where
     }
 
   writeImmutableShare backend storageIndex shareNumber shareData Nothing = do
-    let shares' = immutableShares backend
-    modifyIORef shares' $ addShares storageIndex [(shareNumber, shareData)]
-    s <- readIORef shares'
-    return ()
+    shares <- readIORef (immutableShares backend)
+    changed <- atomicModifyIORef' (immutableShares backend) $
+      \shares -> do
+        case lookup storageIndex shares >>= lookup shareNumber of
+          Just _ ->
+            -- It is not allowed to write new data for an immutable share that
+            -- has already been written.
+            (shares, False)
+          Nothing ->
+            (addShares storageIndex [(shareNumber, shareData)] shares, True)
+    if changed
+      then return ()
+      else throwIO ImmutableShareAlreadyWritten
 
   adviseCorruptImmutableShare backend _ _ _ =
     return mempty

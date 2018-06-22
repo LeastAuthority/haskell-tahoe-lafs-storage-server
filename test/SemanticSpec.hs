@@ -48,6 +48,10 @@ import Test.Hspec
   , around
   , before
   , beforeWith
+  , shouldThrow
+  )
+import Test.Hspec.Expectations
+  ( Selector
   )
 import Test.QuickCheck
   ( Property
@@ -97,7 +101,8 @@ import Storage
   )
 
 import Backend
-  ( Backend
+  ( ImmutableShareAlreadyWritten
+  , Backend
     (createImmutableStorageIndex
     , writeImmutableShare
     , readImmutableShares
@@ -239,6 +244,29 @@ mutableWriteAndEnumerateShares backend storageIndex shareNumbers shareSeed = mon
   when (sreadShareNumbers /= sshareNumbers) $
     fail (show sreadShareNumbers ++ " /= " ++ show sshareNumbers)
 
+-- Immutable share data written to the shares of a given storage index cannot
+-- be rewritten by a subsequent writeImmutableShare operation.
+immutableWriteAndRewriteShare
+  :: Backend b
+  => b
+  -> StorageIndex
+  -> [ShareNumber]
+  -> ByteString
+  -> Property
+immutableWriteAndRewriteShare backend storageIndex shareNumbers shareSeed = monadicIO $ do
+  pre (isUnique shareNumbers)
+  pre (hasElements shareNumbers)
+  let size = fromIntegral (Data.ByteString.length shareSeed)
+  let allocate = AllocateBuckets "renew" "cancel" shareNumbers size
+  let aShareNumber = head shareNumbers
+  let aShare = permuteShare shareSeed aShareNumber
+  let write =
+        writeImmutableShare backend storageIndex aShareNumber aShare Nothing
+  run $ do
+    createImmutableStorageIndex backend storageIndex allocate
+    write
+    write `shouldThrow` (const True :: Selector ImmutableShareAlreadyWritten)
+
 -- Immutable share data written to the shares of a given storage index can be
 -- retrieved verbatim and associated with the same share numbers as were
 -- specified during writing.
@@ -285,6 +313,9 @@ storageSpec =
 
       it "returns the written data when requested" $ \backend -> property $
         forAll genStorageIndex (immutableWriteAndReadShare backend)
+
+      it "cannot be written more than once" $ \backend -> property $
+        forAll genStorageIndex (immutableWriteAndRewriteShare backend)
 
   context "mutable" $ do
     describe "allocate a storage index" $ do

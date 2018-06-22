@@ -74,6 +74,7 @@ test-suite http-tests
                      , directory
                      , temporary
                      , hspec
+                     , hspec-expectations
                      , hspec-wai
                      , QuickCheck
                      , quickcheck-instances

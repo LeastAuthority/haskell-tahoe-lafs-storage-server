@@ -1,6 +1,7 @@
 
 module Backend
   ( Backend(..)
+  , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   , writeMutableShare
   ) where
 
@@ -36,10 +37,16 @@ import Storage
 
   )
 
+data ImmutableShareAlreadyWritten = ImmutableShareAlreadyWritten
+  deriving (Show)
+instance Exception ImmutableShareAlreadyWritten
+
 class Backend b where
   version :: b -> IO Version
 
   createImmutableStorageIndex :: b -> StorageIndex -> AllocateBuckets -> IO AllocationResult
+
+  -- May throw ImmutableShareAlreadyWritten
   writeImmutableShare :: b -> StorageIndex -> ShareNumber -> ShareData -> Maybe ByteRanges -> IO ()
   adviseCorruptImmutableShare :: b -> StorageIndex -> ShareNumber -> CorruptionDetails -> IO ()
   getImmutableShareNumbers :: b -> StorageIndex -> IO [ShareNumber]
