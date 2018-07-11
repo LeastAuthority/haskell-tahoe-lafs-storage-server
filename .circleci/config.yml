@@ -31,9 +31,14 @@ jobs:
                 zlib1g-dev
 
       - restore_cache:
-          name: "Restoring Stack cache"
+          name: "Restoring Stack installation cache"
           keys:
-            - v5-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+            - v6-stack-installation
+
+      - restore_cache:
+          name: "Restoring Stack work areas"
+          keys:
+            - v1-stack-work-{{ checksum "tahoe-lafs-storage-server.cabal" }}
 
       - run:
           name: "Upgrading Stack"
@@ -41,6 +46,12 @@ jobs:
             stack upgrade
             hash -r
             stack install hlint
+
+      - save_cache:
+          name: "Caching Stack installation"
+          key: v6-stack-installation
+          paths:
+            - "/root/.local/bin/stack"
 
       - run:
           name: "Build"
@@ -52,10 +63,9 @@ jobs:
                 --no-run-tests
 
       - save_cache:
-          name: "Caching Stack"
-          key: v5-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+          name: "Caching Stack work areas"
+          key: v1-stack-work-{{ checksum "tahoe-lafs-storage-server.cabal" }}
           paths:
-            - "/root/.local/bin/stack"
             - "/root/.stack"
             - ".stack-work"
 
