@@ -11,7 +11,7 @@ copyright:           BSD3
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:  README.md
+extra-source-files:  README.rst
 
 library
   hs-source-dirs:      src
