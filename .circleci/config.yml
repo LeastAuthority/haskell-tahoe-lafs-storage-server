@@ -50,7 +50,7 @@ jobs:
       - run:
           name: "Build"
           command: |
-            stack build < /dev/null
+            stack build --silent
 
       - run:
           name: "Test"
