@@ -39,6 +39,7 @@ jobs:
           name: "Upgrading Stack"
           command: |
             stack upgrade
+            hash -r
             stack install hlint
 
       - run:
