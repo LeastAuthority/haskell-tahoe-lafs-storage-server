@@ -31,22 +31,14 @@ jobs:
                 zlib1g-dev
 
       - restore_cache:
-          name: "Restoring Stack installation cache"
+          name: "Restoring Stack cache"
           keys:
-            - v3-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+            - v4-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
 
       - run:
           name: "Upgrading Stack"
           command: |
             stack upgrade
-
-      - save_cache:
-          name: "Caching upgraded Stack installation"
-          key: v3-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
-          paths:
-            - "/root/.local/bin/stack"
-            - "/root/.stack"
-            - ".stack-work"
 
       - run:
           name: "Build"
@@ -56,6 +48,14 @@ jobs:
                 --silent \
                 --test \
                 --no-run-tests
+
+      - save_cache:
+          name: "Caching Stack"
+          key: v4-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+          paths:
+            - "/root/.local/bin/stack"
+            - "/root/.stack"
+            - ".stack-work"
 
       - run:
           name: "Test"
