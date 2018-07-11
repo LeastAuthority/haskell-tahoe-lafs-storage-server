@@ -48,6 +48,11 @@ jobs:
             - "/root/.stack"
 
       - run:
-          name: "Run Tests"
+          name: "Build"
           command: |
-            stack test
+            stack build < /dev/null
+
+      - run:
+          name: "Test"
+          command: |
+            stack test < /dev/null
