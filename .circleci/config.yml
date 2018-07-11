@@ -39,6 +39,7 @@ jobs:
           name: "Upgrading Stack"
           command: |
             stack upgrade
+            stack install hlint
 
       - run:
           name: "Build"
@@ -56,6 +57,14 @@ jobs:
             - "/root/.local/bin/stack"
             - "/root/.stack"
             - ".stack-work"
+
+      - run:
+          name: "Lint"
+          command: |
+            hlint src --report
+
+      - store_artifacts:
+          path: "report.html"
 
       - run:
           name: "Test"
