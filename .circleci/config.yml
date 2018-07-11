@@ -61,7 +61,10 @@ jobs:
       - run:
           name: "Lint"
           command: |
-            hlint src --report
+            # Don't let hlint fail the build for now.  When I am a bit more
+            # familiar with it I can finish configuring it and then make it
+            # fail builds.
+            hlint src --report || :
 
       - store_artifacts:
           path: "report.html"
