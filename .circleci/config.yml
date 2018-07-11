@@ -25,7 +25,10 @@ jobs:
           name: "Install Stack"
           command: |
             apt-get --quiet update
-            apt-get --quiet --yes install netbase haskell-stack
+            apt-get --quiet --yes install \
+                netbase \
+                haskell-stack \
+                zlib1g-dev
 
       - restore_cache:
           name: "Restoring Stack installation cache"
