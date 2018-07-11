@@ -33,7 +33,7 @@ jobs:
       - restore_cache:
           name: "Restoring Stack cache"
           keys:
-            - v4-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+            - v5-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
 
       - run:
           name: "Upgrading Stack"
@@ -52,7 +52,7 @@ jobs:
 
       - save_cache:
           name: "Caching Stack"
-          key: v4-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+          key: v5-stack-installation-{{ checksum "tahoe-lafs-storage-server.cabal" }}
           paths:
             - "/root/.local/bin/stack"
             - "/root/.stack"
