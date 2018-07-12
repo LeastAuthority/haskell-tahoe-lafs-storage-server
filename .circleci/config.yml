@@ -80,6 +80,9 @@ jobs:
       - store_artifacts:
           path: "report.html"
 
+      - store_test_results:
+          path: "results.xml"
+
       - run:
           name: "Test"
           command: |
