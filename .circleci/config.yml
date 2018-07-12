@@ -81,7 +81,7 @@ jobs:
           path: "report.html"
 
       - store_test_results:
-          path: "results.xml"
+          path: "./"
 
       - run:
           name: "Test"
