@@ -59,8 +59,9 @@ executable tahoe-lafs-storage-server
 test-suite http-tests
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
-  main-is:             Spec.hs
+  main-is:             Main.hs
   other-modules:       Lib
+                     , Spec
                      , HTTPSpec
                      , SemanticSpec
                      , MiscSpec
@@ -78,6 +79,7 @@ test-suite http-tests
                      , hspec-wai
                      , QuickCheck
                      , quickcheck-instances
+                     , hspec-jenkins-lae
                      , wai-extra
                      , http-types
                      , aeson
