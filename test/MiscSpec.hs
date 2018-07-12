@@ -29,7 +29,7 @@ import Test.QuickCheck
   , vectorOf
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( toInteger
   )
 

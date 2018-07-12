@@ -69,7 +69,7 @@ import System.Directory
   , listDirectory
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset
@@ -87,7 +87,7 @@ import Storage
   , shareNumber
   )
 
-import qualified Storage
+import qualified TahoeLAFS.Storage.API as Storage
 
 import TahoeLAFS.Storage.Backend
   ( ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)

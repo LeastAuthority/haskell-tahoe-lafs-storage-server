@@ -7,7 +7,7 @@
 -- https://artyom.me/aeson#records-and-json-generics
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
-module Storage
+module TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset

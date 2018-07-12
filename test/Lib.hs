@@ -38,7 +38,7 @@ import Test.QuickCheck
 -- Get the Arbitrary ByteString instance.
 import Test.QuickCheck.Instances.ByteString ()
 
-import Storage
+import TahoeLAFS.Storage.API
   ( StorageIndex
   , ShareNumber
   , shareNumber

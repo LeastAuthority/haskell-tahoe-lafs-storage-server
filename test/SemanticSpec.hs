@@ -87,7 +87,7 @@ import Data.Map.Strict
   ( lookup
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Size
   , StorageIndex
   , ShareNumber

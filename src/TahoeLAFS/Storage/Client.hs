@@ -19,7 +19,7 @@ import Servant.Client
   ( client
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( api
   )
 

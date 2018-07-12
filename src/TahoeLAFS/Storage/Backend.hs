@@ -18,7 +18,7 @@ import Network.HTTP.Types
   ( ByteRanges
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version
   , StorageIndex
   , AllocateBuckets

@@ -40,7 +40,7 @@ import System.Posix.StatVFS
   , statVFS
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset

@@ -13,7 +13,7 @@ import Control.Exception
   , throw
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset
