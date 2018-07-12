@@ -73,7 +73,7 @@ import TahoeLAFS.Storage.Backend.Null
   ( NullBackend(NullBackend)
   )
 
-import Server
+import TahoeLAFS.Storage.Server
   ( app
   )
 

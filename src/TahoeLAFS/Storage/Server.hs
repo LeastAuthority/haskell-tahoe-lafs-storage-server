@@ -1,4 +1,4 @@
-module Server
+module TahoeLAFS.Storage.Server
   ( StorageServerConfig(StorageServerConfig)
   , app
   , main
