@@ -1,4 +1,4 @@
-module Client
+module TahoeLAFS.Storage.Client
   ( version
   , createImmutableStorageIndex
   , writeImmutableShare

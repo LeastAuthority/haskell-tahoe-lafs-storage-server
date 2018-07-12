@@ -33,7 +33,7 @@ library
                      , TahoeLAFS.Storage.Backend.Memory
                      , TahoeLAFS.Storage.Backend.Filesystem
                      , Server
-                     , Client
+                     , TahoeLAFS.Storage.Client
   other-modules:       TahoeLAFS.Internal.ServantUtil
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
