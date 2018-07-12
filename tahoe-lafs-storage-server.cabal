@@ -28,7 +28,7 @@ extra-source-files:  README.rst
 library
   hs-source-dirs:      src
   exposed-modules:     Storage
-                     , Backend
+                     , TahoeLAFS.Storage.Backend
                      , NullBackend
                      , MemoryBackend
                      , FilesystemBackend

@@ -65,7 +65,7 @@ import Network.Wai.Test
   ( SResponse
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( Backend
   )
 

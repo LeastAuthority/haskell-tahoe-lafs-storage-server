@@ -57,7 +57,7 @@ import Storage
   , shareNumbers
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( Backend(..)
   , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   )

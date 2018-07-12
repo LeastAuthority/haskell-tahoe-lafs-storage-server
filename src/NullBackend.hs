@@ -19,7 +19,7 @@ import Storage
   , AllocationResult(..)
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( Backend(..)
   )
 

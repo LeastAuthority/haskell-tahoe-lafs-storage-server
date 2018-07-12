@@ -100,7 +100,7 @@ import Storage
   , toInteger
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( ImmutableShareAlreadyWritten
   , Backend
     (createImmutableStorageIndex

@@ -1,5 +1,5 @@
 
-module Backend
+module TahoeLAFS.Storage.Backend
   ( Backend(..)
   , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   , writeMutableShare

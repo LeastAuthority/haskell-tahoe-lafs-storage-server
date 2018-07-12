@@ -89,7 +89,7 @@ import Storage
 
 import qualified Storage
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   , Backend(..)
   )

@@ -33,7 +33,7 @@ import Storage
   , api
   )
 
-import qualified Backend
+import qualified TahoeLAFS.Storage.Backend as Backend
 import FilesystemBackend
   ( FilesystemBackend(FilesystemBackend)
   )
