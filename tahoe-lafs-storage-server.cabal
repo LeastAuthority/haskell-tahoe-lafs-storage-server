@@ -30,7 +30,7 @@ library
   exposed-modules:     Storage
                      , TahoeLAFS.Storage.Backend
                      , TahoeLAFS.Storage.Backend.Null
-                     , MemoryBackend
+                     , TahoeLAFS.Storage.Backend.Memory
                      , FilesystemBackend
                      , Server
                      , Client

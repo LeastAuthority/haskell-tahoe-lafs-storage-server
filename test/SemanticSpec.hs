@@ -119,7 +119,7 @@ import Lib
   ( genStorageIndex
   )
 
-import MemoryBackend
+import TahoeLAFS.Storage.Backend.Memory
   ( MemoryBackend
   , memoryBackend
   )

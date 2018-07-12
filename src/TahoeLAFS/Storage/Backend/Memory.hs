@@ -1,4 +1,4 @@
-module MemoryBackend
+module TahoeLAFS.Storage.Backend.Memory
   ( MemoryBackend(MemoryBackend)
   , memoryBackend
   ) where
