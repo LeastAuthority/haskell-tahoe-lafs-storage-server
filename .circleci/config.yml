@@ -80,10 +80,10 @@ jobs:
       - store_artifacts:
           path: "report.html"
 
-      - store_test_results:
-          path: "./"
-
       - run:
           name: "Test"
           command: |
             stack test
+
+      - store_test_results:
+          path: "./"
