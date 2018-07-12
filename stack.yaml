@@ -37,6 +37,7 @@ resolver: lts-11.9
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
@@ -48,6 +49,9 @@ extra-deps:
   - "hspec-2.5.1"
   - "hspec-core-2.5.1"
   - "hspec-discover-2.5.1"
+  # Use a fork that builds with modern hspec
+  - github: "LeastAuthority/hspec-jenkins"
+    commit: "7d2274461a395f9fa889890e14c6d758314b3af3"
   - "base32-bytestring-0.2.1.0"
   - "bits-extras-0.1.3"
 

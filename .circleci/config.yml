@@ -1,0 +1,90 @@
+# https://circleci.com/docs/2.0/
+
+version: 2
+workflows:
+  version: 2
+
+  ci:
+    jobs:
+      # Platforms
+      - "ubuntu-18.04"
+
+jobs:
+  ubuntu-18.04:
+    docker:
+      - image: "ubuntu:18.04"
+
+    environment:
+      # Add /root/.local/bin to PATH so that the upgraded stack is preferred.
+      PATH: "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+    steps:
+      - "checkout"
+
+      - run:
+          name: "Install Stack"
+          command: |
+            apt-get --quiet update
+            apt-get --quiet --yes install \
+                netbase \
+                haskell-stack \
+                zlib1g-dev
+
+      - restore_cache:
+          name: "Restoring Stack installation cache"
+          keys:
+            - v6-stack-installation
+
+      - restore_cache:
+          name: "Restoring Stack work areas"
+          keys:
+            - v1-stack-work-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+
+      - run:
+          name: "Upgrading Stack"
+          command: |
+            stack upgrade
+            hash -r
+            stack install hlint
+
+      - save_cache:
+          name: "Caching Stack installation"
+          key: v6-stack-installation
+          paths:
+            - "/root/.local/bin/stack"
+
+      - run:
+          name: "Build"
+          command: |
+            # Build it, including tests (but don't run them)
+            stack build \
+                --silent \
+                --test \
+                --no-run-tests
+
+      - save_cache:
+          name: "Caching Stack work areas"
+          key: v1-stack-work-{{ checksum "tahoe-lafs-storage-server.cabal" }}
+          paths:
+            - "/root/.stack"
+            - ".stack-work"
+
+      - run:
+          name: "Lint"
+          command: |
+            # Don't let hlint fail the build for now.  When I am a bit more
+            # familiar with it I can finish configuring it and then make it
+            # fail builds.
+            hlint src --report || :
+
+      - store_artifacts:
+          path: "report.html"
+
+      - run:
+          name: "Test"
+          command: |
+            mkdir -p test-results/http-tests
+            stack test
+
+      - store_test_results:
+          path: "./test-results"
