@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module FilesystemBackend
+module TahoeLAFS.Storage.Backend.Filesystem
   ( FilesystemBackend(FilesystemBackend)
   , storageStartSegment
   , partitionM

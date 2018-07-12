@@ -31,7 +31,7 @@ library
                      , TahoeLAFS.Storage.Backend
                      , TahoeLAFS.Storage.Backend.Null
                      , TahoeLAFS.Storage.Backend.Memory
-                     , FilesystemBackend
+                     , TahoeLAFS.Storage.Backend.Filesystem
                      , Server
                      , Client
   other-modules:       ServantUtil

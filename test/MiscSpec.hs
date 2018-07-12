@@ -40,7 +40,7 @@ import Lib
   , b32decode
   )
 
-import FilesystemBackend
+import TahoeLAFS.Storage.Backend.Filesystem
   ( partitionM
   , storageStartSegment
   , pathOfShare

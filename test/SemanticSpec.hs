@@ -124,7 +124,7 @@ import TahoeLAFS.Storage.Backend.Memory
   , memoryBackend
   )
 
-import FilesystemBackend
+import TahoeLAFS.Storage.Backend.Filesystem
   ( FilesystemBackend(FilesystemBackend)
   )
 
