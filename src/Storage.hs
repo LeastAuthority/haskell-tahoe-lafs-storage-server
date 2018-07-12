@@ -106,7 +106,7 @@ import Network.HTTP.Types
   , renderByteRanges
   )
 
-import ServantUtil
+import TahoeLAFS.Internal.ServantUtil
   ( CBOR
   )
 
