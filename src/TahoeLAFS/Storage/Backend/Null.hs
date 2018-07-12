@@ -1,4 +1,4 @@
-module NullBackend
+module TahoeLAFS.Storage.Backend.Null
   ( NullBackend(NullBackend)
   ) where
 

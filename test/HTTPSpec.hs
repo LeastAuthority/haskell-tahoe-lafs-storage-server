@@ -69,7 +69,7 @@ import TahoeLAFS.Storage.Backend
   ( Backend
   )
 
-import NullBackend
+import TahoeLAFS.Storage.Backend.Null
   ( NullBackend(NullBackend)
   )
 

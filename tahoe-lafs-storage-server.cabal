@@ -29,7 +29,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Storage
                      , TahoeLAFS.Storage.Backend
-                     , NullBackend
+                     , TahoeLAFS.Storage.Backend.Null
                      , MemoryBackend
                      , FilesystemBackend
                      , Server
