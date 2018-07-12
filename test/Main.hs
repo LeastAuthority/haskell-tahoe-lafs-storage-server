@@ -42,5 +42,5 @@ main = do
       hspecWith
       defaultConfig
       { configFormatter = Just xmlFormatter
-      , configOutputFile = Right ("results.xml" :: FilePath)
+      , configOutputFile = Right ("test-results/http-tests/results.xml" :: FilePath)
       } spec
