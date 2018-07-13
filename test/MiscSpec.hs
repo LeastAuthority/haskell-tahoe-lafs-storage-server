@@ -29,7 +29,7 @@ import Test.QuickCheck
   , vectorOf
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( toInteger
   )
 
@@ -40,7 +40,7 @@ import Lib
   , b32decode
   )
 
-import FilesystemBackend
+import TahoeLAFS.Storage.Backend.Filesystem
   ( partitionM
   , storageStartSegment
   , pathOfShare

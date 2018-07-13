@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ServantUtil
+module TahoeLAFS.Internal.ServantUtil
   ( CBOR
   ) where
 

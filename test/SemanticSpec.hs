@@ -87,7 +87,7 @@ import Data.Map.Strict
   ( lookup
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Size
   , StorageIndex
   , ShareNumber
@@ -100,7 +100,7 @@ import Storage
   , toInteger
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( ImmutableShareAlreadyWritten
   , Backend
     (createImmutableStorageIndex
@@ -119,12 +119,12 @@ import Lib
   ( genStorageIndex
   )
 
-import MemoryBackend
+import TahoeLAFS.Storage.Backend.Memory
   ( MemoryBackend
   , memoryBackend
   )
 
-import FilesystemBackend
+import TahoeLAFS.Storage.Backend.Filesystem
   ( FilesystemBackend(FilesystemBackend)
   )
 

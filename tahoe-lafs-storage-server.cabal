@@ -1,28 +1,40 @@
 name:                tahoe-lafs-storage-server
 version:             0.1.0.0
--- synopsis:
--- description:
+synopsis:            A Tahoe-LAFS Storage Server
+
+description:         This package implements a storage server for Tahoe-LAFS.
+                     It implements the recently proposed "Great Black Swamp"
+                     protocol and not the original Foolscap-based protocol.
+
 homepage:            https://github.com/LeastAuthority/tahoe-lafs-storage-server#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Least Authority TFA GmbH
 maintainer:          jean-paul@leastauthority.com
 copyright:           BSD3
-category:            Web
+category:            Cryptography
+                   , Distributed Computing
+                   , Filesystem
+                   , Network
+                   , Network APIs
+                   , Security
+                   , Service
+                   , Storage
+                   , Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.rst
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Storage
-                     , Backend
-                     , NullBackend
-                     , MemoryBackend
-                     , FilesystemBackend
-                     , Server
-                     , Client
-  other-modules:       ServantUtil
+  exposed-modules:     TahoeLAFS.Storage.API
+                     , TahoeLAFS.Storage.Backend
+                     , TahoeLAFS.Storage.Backend.Null
+                     , TahoeLAFS.Storage.Backend.Memory
+                     , TahoeLAFS.Storage.Backend.Filesystem
+                     , TahoeLAFS.Storage.Server
+                     , TahoeLAFS.Storage.Client
+  other-modules:       TahoeLAFS.Internal.ServantUtil
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , containers

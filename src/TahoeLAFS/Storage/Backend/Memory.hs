@@ -1,4 +1,4 @@
-module MemoryBackend
+module TahoeLAFS.Storage.Backend.Memory
   ( MemoryBackend(MemoryBackend)
   , memoryBackend
   ) where
@@ -40,7 +40,7 @@ import System.Posix.StatVFS
   , statVFS
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset
@@ -57,7 +57,7 @@ import Storage
   , shareNumbers
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( Backend(..)
   , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   )

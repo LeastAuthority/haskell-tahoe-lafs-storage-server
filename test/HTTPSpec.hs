@@ -65,15 +65,15 @@ import Network.Wai.Test
   ( SResponse
   )
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( Backend
   )
 
-import NullBackend
+import TahoeLAFS.Storage.Backend.Null
   ( NullBackend(NullBackend)
   )
 
-import Server
+import TahoeLAFS.Storage.Server
   ( app
   )
 

@@ -1,5 +1,5 @@
 
-module Backend
+module TahoeLAFS.Storage.Backend
   ( Backend(..)
   , ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   , writeMutableShare
@@ -18,7 +18,7 @@ import Network.HTTP.Types
   ( ByteRanges
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version
   , StorageIndex
   , AllocateBuckets

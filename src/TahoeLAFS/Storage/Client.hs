@@ -1,4 +1,4 @@
-module Client
+module TahoeLAFS.Storage.Client
   ( version
   , createImmutableStorageIndex
   , writeImmutableShare
@@ -19,7 +19,7 @@ import Servant.Client
   ( client
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( api
   )
 

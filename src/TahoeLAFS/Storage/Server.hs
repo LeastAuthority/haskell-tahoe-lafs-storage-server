@@ -1,4 +1,4 @@
-module Server
+module TahoeLAFS.Storage.Server
   ( StorageServerConfig(StorageServerConfig)
   , app
   , main
@@ -13,7 +13,7 @@ import Control.Exception
   , throw
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset
@@ -33,8 +33,8 @@ import Storage
   , api
   )
 
-import qualified Backend
-import FilesystemBackend
+import qualified TahoeLAFS.Storage.Backend as Backend
+import TahoeLAFS.Storage.Backend.Filesystem
   ( FilesystemBackend(FilesystemBackend)
   )
 

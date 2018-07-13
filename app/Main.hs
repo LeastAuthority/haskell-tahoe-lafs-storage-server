@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Server
+import qualified TahoeLAFS.Storage.Server as Server
 
 import Options.Applicative
   ( Parser

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module FilesystemBackend
+module TahoeLAFS.Storage.Backend.Filesystem
   ( FilesystemBackend(FilesystemBackend)
   , storageStartSegment
   , partitionM
@@ -69,7 +69,7 @@ import System.Directory
   , listDirectory
   )
 
-import Storage
+import TahoeLAFS.Storage.API
   ( Version(..)
   , Size
   , Offset
@@ -87,9 +87,9 @@ import Storage
   , shareNumber
   )
 
-import qualified Storage
+import qualified TahoeLAFS.Storage.API as Storage
 
-import Backend
+import TahoeLAFS.Storage.Backend
   ( ImmutableShareAlreadyWritten(ImmutableShareAlreadyWritten)
   , Backend(..)
   )
