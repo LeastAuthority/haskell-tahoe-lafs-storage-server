@@ -68,6 +68,15 @@ executable tahoe-lafs-storage-server
                      , tahoe-lafs-storage-server
                      , warp
 
+executable gbs-generate-python-client
+  hs-source-dirs:      generate-python-client
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , tahoe-lafs-storage-server
+                     , servant-py >= 0.1 && < 2
+                     , filepath
+
 test-suite http-tests
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
