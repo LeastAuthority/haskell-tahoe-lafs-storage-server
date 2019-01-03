@@ -29,7 +29,8 @@ jobs:
                 netbase \
                 haskell-stack \
                 zlib1g-dev \
-                unzip
+                unzip \
+
 
       - restore_cache:
           name: "Restoring Stack installation cache"
@@ -93,7 +94,7 @@ jobs:
       - run:
           name: "Generate HTTP API Docs"
           command: |
-            stack exec gbs-generate-apidocs > http-apidocs.html
+            LANG=C.UTF-8 stack exec gbs-generate-apidocs > http-apidocs.html
 
       - store_artifacts:
           path: "http-apidocs.html"
