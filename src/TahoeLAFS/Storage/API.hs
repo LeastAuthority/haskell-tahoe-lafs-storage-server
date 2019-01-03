@@ -12,7 +12,7 @@ module TahoeLAFS.Storage.API
   , Size
   , Offset
   , StorageIndex
-  , ShareNumber
+  , ShareNumber(ShareNumber)
   , shareNumber
   , toInteger
   , ShareData
@@ -25,11 +25,19 @@ module TahoeLAFS.Storage.API
   , ReadTestWriteVectors(..)
   , ReadTestWriteResult(..)
   , ReadVectors
+  , ReadVector
+  , TestVector(TestVector)
+  , WriteVector(WriteVector)
   , ReadResult
-  , CorruptionDetails
+  , CorruptionDetails(CorruptionDetails)
   , SlotSecrets(..)
+  , TestOperator(..)
   , StorageAPI
   , api
+  , renewSecretLength
+  , writeEnablerSecretLength
+  , leaseRenewSecretLength
+  , leaseCancelSecretLength
   ) where
 
 import Prelude hiding
@@ -115,6 +123,17 @@ type PutCreated = Verb 'PUT 201
 tahoeJSONOptions = defaultOptions
   { fieldLabelModifier = camelTo2 '-'
   }
+
+-- The expected lengths of the secrets represented as opaque byte strings.
+-- I haven't checked that these values are correct according to Tahoe-LAFS.
+renewSecretLength :: Num a => a
+renewSecretLength = 32
+writeEnablerSecretLength :: Num a => a
+writeEnablerSecretLength = 32
+leaseRenewSecretLength :: Num a => a
+leaseRenewSecretLength = 32
+leaseCancelSecretLength :: Num a => a
+leaseCancelSecretLength = 32
 
 type ApplicationVersion = String
 type Size = Integer
@@ -270,7 +289,7 @@ type StorageAPI =
   --
   -- GET /v1/immutable/:storage_index?[share=s0&share=s1&...]
   -- Read from an immutable storage index, possibly from multiple shares, possibly limited to certain ranges
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR, JSON] ReadResult
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> QueryParams "share_number" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR, JSON] ReadResult
 
   -- Mutable share interactions
 
@@ -287,7 +306,7 @@ type StorageAPI =
   --
   -- GET /v1/mutable/:storage_index
   -- Read from a mutable storage index
-  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> QueryParams "share" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR, JSON] ReadResult
+  :<|> "v1" :> "mutable" :> Capture "storage_index" StorageIndex :> QueryParams "share_number" ShareNumber :> QueryParams "offset" Offset :> QueryParams "size" Size :> Get '[CBOR, JSON] ReadResult
 
   --
   -- GET /v1/mutable/:storage_index/shares
