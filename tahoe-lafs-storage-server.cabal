@@ -74,7 +74,7 @@ executable gbs-generate-python-client
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , tahoe-lafs-storage-server
-                     , servant-py >= 0.1 && < 2
+                     , servant-py
                      , filepath
 
 test-suite http-tests

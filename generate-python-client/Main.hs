@@ -8,6 +8,7 @@ import System.FilePath
 import Servant.PY
   ( writePythonForAPI
   , requests
+  , treq
   )
 
 import TahoeLAFS.Storage.API
@@ -18,4 +19,6 @@ result :: FilePath
 result = "./"
 
 main :: IO ()
-main = writePythonForAPI api requests (result </> "requests_api.py")
+main = do
+    writePythonForAPI api requests (result </> "requests_api.py")
+    writePythonForAPI api treq (result </> "treq_api.py")
