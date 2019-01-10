@@ -54,6 +54,13 @@ extra-deps:
     commit: "7d2274461a395f9fa889890e14c6d758314b3af3"
   - "base32-bytestring-0.2.1.0"
   - "bits-extras-0.1.3"
+  # Let us generate a Python client for the API.
+  # Released version is a bit broken.
+  # - "servant-py-0.1.1.0"
+  - github: "LeastAuthority/servant-py"
+    commit: "c34c9c5"
+  # Servant-Py requires a newer version of aeson than is in our resolver.
+  - "aeson-1.3.1.1"
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

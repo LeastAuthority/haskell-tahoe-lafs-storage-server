@@ -250,7 +250,12 @@ type StorageAPI =
   --
   -- PUT /v1/immutable/:storage_index/:share_number
   -- Write data for an immutable share to an allocated storage index
-  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> ReqBody '[OctetStream] ShareData :> Header "Content-Range" ByteRanges :> PutCreated '[CBOR, JSON] ()
+  --
+  -- Note this accepts JSON to facilitate code generation by servant-py.  This
+  -- is total nonsense and supplying JSON here will almost certainly break.
+  -- At some point hopefully we'll fix servant-py to not need this and then
+  -- fix the signature here.
+  :<|> "v1" :> "immutable" :> Capture "storage_index" StorageIndex :> Capture "share_number" ShareNumber :> ReqBody '[OctetStream, JSON] ShareData :> Header "Content-Range" ByteRanges :> PutCreated '[CBOR, JSON] ()
 
   --
   -- POST /v1/immutable/:storage_index/:share_number/corrupt
