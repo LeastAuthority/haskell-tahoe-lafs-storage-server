@@ -118,7 +118,7 @@ instance ToSample ReadTestWriteVectors where
 
 instance ToSample ReadTestWriteResult where
   toSamples _ = singleSample $
-    ReadTestWriteResult True $ sampleReadResult
+    ReadTestWriteResult True sampleReadResult
 
 sampleTestWriteVectors :: Map ShareNumber TestWriteVectors
 sampleTestWriteVectors = fromList

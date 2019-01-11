@@ -6,7 +6,6 @@ module TahoeLAFS.Storage.Backend.Memory
 import Prelude hiding
   ( map
   , lookup
-  , filter
   )
 
 import Control.Exception
@@ -97,7 +96,7 @@ instance Backend MemoryBackend where
   createMutableStorageIndex backend storageIndex params =
     return AllocationResult
     { alreadyHave = mempty
-    , allocated = (shareNumbers params)
+    , allocated = shareNumbers params
     }
 
   getMutableShareNumbers backend storageIndex = do
@@ -130,13 +129,13 @@ instance Backend MemoryBackend where
   createImmutableStorageIndex backend idx params =
     return AllocationResult
     { alreadyHave = mempty
-    , allocated = (shareNumbers params)
+    , allocated = shareNumbers params
     }
 
   writeImmutableShare backend storageIndex shareNumber shareData Nothing = do
     shares <- readIORef (immutableShares backend)
     changed <- atomicModifyIORef' (immutableShares backend) $
-      \shares -> do
+      \shares ->
         case lookup storageIndex shares >>= lookup shareNumber of
           Just _ ->
             -- It is not allowed to write new data for an immutable share that
@@ -186,8 +185,7 @@ addShares storageIndex ((shareNumber, shareData):rest) shareStorage =
                 Just shares  ->
                   adjust addShare' storageIndex shareStorage
                   where
-                    addShare' shares =
-                      insert shareNumber shareData shares
+                    addShare' = insert shareNumber shareData
   in
     addShares storageIndex rest added
 
