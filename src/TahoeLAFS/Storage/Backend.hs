@@ -98,9 +98,10 @@ writeMutableShare b secrets storageIndex shareNumber shareData Nothing = do
                 , readVector = mempty
                 }
   result <- readvAndTestvAndWritev b storageIndex vectors
-  case (success result) of
-    False -> throw WriteRefused
-    True -> return ()
+  if success result then
+    return ()
+    else
+    throw WriteRefused
 
 data WriteRefused = WriteRefused deriving (Show, Eq)
 instance Exception WriteRefused

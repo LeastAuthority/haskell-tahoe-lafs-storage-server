@@ -29,7 +29,7 @@ import Control.Exception
   )
 
 import Data.Maybe
-  ( catMaybes
+  ( mapMaybe
   )
 
 import Data.List
@@ -115,7 +115,7 @@ maxMutableShareSize = 69105 * 1000 * 1000 * 1000 * 1000
 instance Backend FilesystemBackend where
   version (FilesystemBackend path) = do
     vfs <- statVFS path
-    let available = (toInteger $ statVFS_bsize vfs) * (toInteger $ statVFS_bavail vfs)
+    let available = toInteger (statVFS_bsize vfs) * toInteger (statVFS_bavail vfs)
     return Version
       { applicationVersion = versionString
       , parameters =
@@ -169,17 +169,16 @@ instance Backend FilesystemBackend where
           case storageIndexChildren of
             Left _           -> []
             Right children   -> children
-    return $ catMaybes $ map (shareNumber . read) sharePaths
+    return $ mapMaybe (shareNumber . read) sharePaths
 
   -- TODO Handle ranges.
   -- TODO Make sure the share storage was allocated.
   readImmutableShares (FilesystemBackend root) storageIndex shareNumbers [] [] =
     let storageIndexPath = pathOfStorageIndex root storageIndex
         only x = [x]
-        readShare = readFile . (pathOfShare root storageIndex) in
-      do
-        allShareData <- sequence $ map readShare shareNumbers
-        return $ fromList $ zip shareNumbers (map only allShareData)
+        readShare = readFile . pathOfShare root storageIndex
+    in
+      fromList . zip shareNumbers . map only <$> mapM readShare shareNumbers
 
   createMutableStorageIndex = createImmutableStorageIndex
 
@@ -249,16 +248,16 @@ pathOfStorageIndex root storageIndex =
 
 pathOfShare :: FilePath -> StorageIndex -> ShareNumber -> FilePath
 pathOfShare root storageIndex shareNumber =
-  pathOfStorageIndex root storageIndex </> (show $ Storage.toInteger shareNumber)
+  pathOfStorageIndex root storageIndex </> show (Storage.toInteger shareNumber)
 
 incomingPathOf :: FilePath -> StorageIndex -> ShareNumber -> FilePath
 incomingPathOf root storageIndex shareNumber =
-  root </> "shares" </> "incoming" </> storageStartSegment storageIndex </> storageIndex </> (show $ Storage.toInteger shareNumber)
+  root </> "shares" </> "incoming" </> storageStartSegment storageIndex </> storageIndex </> show (Storage.toInteger shareNumber)
 
 storageStartSegment :: StorageIndex -> FilePath
 storageStartSegment [] = fail "illegal short storage index"
-storageStartSegment (a:[]) = storageStartSegment []
-storageStartSegment (a:b:rest) = a:b:[]
+storageStartSegment [a] = storageStartSegment []
+storageStartSegment (a:b:rest) = [a, b]
 
 -- Create a space to write data for an incoming share.
 allocate
