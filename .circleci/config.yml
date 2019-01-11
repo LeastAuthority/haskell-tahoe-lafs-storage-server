@@ -102,7 +102,7 @@ jobs:
       - run:
           name: "Generate Python Client"
           command: |
-            stack exec gbs-generate-python-client
+            stack exec gbs-generate-clients
 
       - store_artifacts:
           path: "requests_api.py"
