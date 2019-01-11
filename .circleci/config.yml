@@ -100,13 +100,13 @@ jobs:
           path: "treq_api.py"
 
       - store_artifacts:
-          path: "angular_api.py"
+          path: "angular_api.js"
 
       - store_artifacts:
-          path: "vanilla_api.py"
+          path: "vanilla_api.js"
 
       - store_artifacts:
-          path: "jquery_api.py"
+          path: "jquery_api.js"
 
       - run:
           name: "Lint"
