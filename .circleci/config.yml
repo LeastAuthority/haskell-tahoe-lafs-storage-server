@@ -98,3 +98,14 @@ jobs:
 
       - store_artifacts:
           path: "http-apidocs.html"
+
+      - run:
+          name: "Generate Python Client"
+          command: |
+            stack exec gbs-generate-python-client
+
+      - store_artifacts:
+          path: "requests_api.py"
+
+      - store_artifacts:
+          path: "treq_api.py"
