@@ -28,7 +28,9 @@ jobs:
             apt-get --quiet --yes install \
                 netbase \
                 haskell-stack \
-                zlib1g-dev
+                zlib1g-dev \
+                unzip \
+
 
       - restore_cache:
           name: "Restoring Stack installation cache"
@@ -88,3 +90,11 @@ jobs:
 
       - store_test_results:
           path: "./test-results"
+
+      - run:
+          name: "Generate HTTP API Docs"
+          command: |
+            LANG=C.UTF-8 stack exec gbs-generate-apidocs > http-apidocs.html
+
+      - store_artifacts:
+          path: "http-apidocs.html"
