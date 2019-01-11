@@ -72,14 +72,6 @@ jobs:
             - ".stack-work"
 
       - run:
-          name: "Lint"
-          command: |
-            hlint src --ignore="Use newtype instead of data" --cross --report
-
-      - store_artifacts:
-          path: "report.html"
-
-      - run:
           name: "Test"
           command: |
             mkdir -p test-results/http-tests
@@ -115,3 +107,11 @@ jobs:
 
       - store_artifacts:
           path: "jquery_api.py"
+
+      - run:
+          name: "Lint"
+          command: |
+            hlint src --ignore="Use newtype instead of data" --cross --report
+
+      - store_artifacts:
+          path: "report.html"
