@@ -7,12 +7,12 @@ workflows:
   ci:
     jobs:
       # Platforms
-      - "ubuntu-20.04"
+      - "ubuntu-18.04"
 
 jobs:
-  ubuntu-20.04:
+  ubuntu-18.04:
     docker:
-      - image: "public.ecr.aws/lts/ubuntu:20.04_stable"
+      - image: "ubuntu:18.04"
 
     environment:
       # Add /root/.local/bin to PATH so that the upgraded stack is preferred.
