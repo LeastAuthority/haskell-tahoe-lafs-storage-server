@@ -86,11 +86,3 @@ extra-deps:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 allow-newer: true
-
-nix:
-  enable: true
-  packages:
-    # digest for zlib.h / libz.so
-    - "zlib"
-    # statvfs, for autoreconf
-    - "autoconf"

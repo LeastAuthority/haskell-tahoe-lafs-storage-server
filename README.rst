@@ -11,7 +11,11 @@ Requirements
 
 haskell-tahoe-lafs-storage-server uses stack and GHC.
 Most dependencies should be handled automatically by stack.
-You may need to manually install libz/libz-dev and autoconf.
+If you have nix installed then you can use ``nix-shell`` to set up a build environment containing the non-Haskell dependencies.
+If you don't have nix then you should install these some other way:
+
+  * zlib-dev
+  * autoconf
 
 Run Unit Tests
 --------------
