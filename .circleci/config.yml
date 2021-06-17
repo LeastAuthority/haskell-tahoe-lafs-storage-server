@@ -11,6 +11,8 @@ workflows:
 
 jobs:
   ubuntu-18.04:
+    resource_class: "large"
+
     docker:
       - image: "ubuntu:18.04"
 
