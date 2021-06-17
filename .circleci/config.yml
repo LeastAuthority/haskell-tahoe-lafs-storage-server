@@ -47,9 +47,9 @@ jobs:
       - run:
           name: "Upgrading Stack"
           command: |
-            stack upgrade
+            stack --no-terminal upgrade
             hash -r
-            stack install hlint
+            stack --no-terminal install hlint
 
       - save_cache:
           name: "Caching Stack installation"
@@ -61,8 +61,7 @@ jobs:
           name: "Build"
           command: |
             # Build it, including tests (but don't run them)
-            stack build \
-                --silent \
+            stack --no-terminal \
                 --test \
                 --no-run-tests
 
@@ -77,7 +76,7 @@ jobs:
           name: "Test"
           command: |
             mkdir -p test-results/http-tests
-            stack test
+            stack --no-terminal test
 
       - store_test_results:
           path: "./test-results"
