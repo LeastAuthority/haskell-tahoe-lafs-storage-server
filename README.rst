@@ -6,6 +6,13 @@ Tahoe-LAFS Storage Server
 
 This is a preliminary implementation of the ``Great Black Swamp`` storage protocol.
 
+Requirements
+------------
+
+haskell-tahoe-lafs-storage-server uses stack and GHC.
+Most dependencies should be handled automatically by stack.
+You may need to manually install libz/libz-dev and autoconf.
+
 Run Unit Tests
 --------------
 
