@@ -62,6 +62,7 @@ jobs:
           command: |
             # Build it, including tests (but don't run them)
             stack --no-terminal \
+                build \
                 --test \
                 --no-run-tests
 
