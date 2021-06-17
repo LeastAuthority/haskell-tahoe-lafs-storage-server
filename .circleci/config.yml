@@ -15,18 +15,17 @@ jobs:
       - image: "ubuntu:18.04"
 
     steps:
-      - "checkout"
-
       - run:
-          name: "Install Stack"
+          name: "Install Build Dependencies"
           command: |
-            apt-get --quiet update
             apt-get --quiet --yes install \
+                git
                 netbase \
                 haskell-stack \
                 zlib1g-dev \
                 unzip \
 
+      - "checkout"
 
       - restore_cache:
           name: "Restoring Stack installation cache"
