@@ -77,7 +77,7 @@ import TahoeLAFS.Storage.Server
   ( app
   )
 
-getJSON :: ByteString -> WaiSession SResponse
+getJSON :: ByteString -> WaiSession st SResponse
 getJSON path =
   request
     methodGet
@@ -85,7 +85,7 @@ getJSON path =
     [("Accept", "application/json")]
     ""
 
-postJSON :: ByteString -> L.ByteString -> WaiSession SResponse
+postJSON :: ByteString -> L.ByteString -> WaiSession st SResponse
 postJSON path body =
   request
     methodPost
@@ -93,7 +93,7 @@ postJSON path body =
     [("Content-Type", "application/json"), ("Accept", "application/json")]
     body
 
-putShare :: ByteString -> Int64 -> WaiSession SResponse
+putShare :: ByteString -> Int64 -> WaiSession st SResponse
 putShare path size =
   request
     methodPut

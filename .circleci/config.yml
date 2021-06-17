@@ -11,6 +11,8 @@ workflows:
 
 jobs:
   ubuntu-18.04:
+    resource_class: "large"
+
     docker:
       - image: "ubuntu:18.04"
 
@@ -30,12 +32,13 @@ jobs:
                 haskell-stack \
                 zlib1g-dev \
                 unzip \
+                autoconf
 
 
       - restore_cache:
           name: "Restoring Stack installation cache"
           keys:
-            - v6-stack-installation
+            - v7-stack-installation
 
       - restore_cache:
           name: "Restoring Stack work areas"
@@ -45,13 +48,13 @@ jobs:
       - run:
           name: "Upgrading Stack"
           command: |
-            stack upgrade
+            stack --no-terminal upgrade
             hash -r
-            stack install hlint
+            stack --no-terminal install hlint
 
       - save_cache:
           name: "Caching Stack installation"
-          key: v6-stack-installation
+          key: v7-stack-installation
           paths:
             - "/root/.local/bin/stack"
 
@@ -59,8 +62,8 @@ jobs:
           name: "Build"
           command: |
             # Build it, including tests (but don't run them)
-            stack build \
-                --silent \
+            stack --no-terminal \
+                build \
                 --test \
                 --no-run-tests
 
@@ -75,7 +78,7 @@ jobs:
           name: "Test"
           command: |
             mkdir -p test-results/http-tests
-            stack test
+            stack --no-terminal test
 
       - store_test_results:
           path: "./test-results"
