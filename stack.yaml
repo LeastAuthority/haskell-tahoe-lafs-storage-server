@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: "lts-13.2"
+resolver: "lts-16.31"
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -41,16 +41,22 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-  - "serialise-0.2.1.0"
-  - "cborg-0.2.1.0"
-  - "cborg-json-0.2.1.0"
-  - "statvfs-0.2"
-  - "argparser-0.3.4"
+  # Grab a revision from a branch with a PR that fixes a build error against
+  # recent versions of Cabal.  https://github.com/nilcons/statvfs/pull/2
+  - github: "k-bx/statvfs"
+    commit: "a40f05882c90447a73ae837444ff2b427f02fac3"
+
+  # Use a fork that has been updated to work with more recent stack lts.
+  # pandoc had some incompatible changes, lts bumped to newer pandoc with
+  # these changes (non-PVP conforming, by the way) and upstream servant-pandoc
+  # has not yet been updated to work with them.
+  - github: "Simspace/servant-pandoc"
+    commit: "9f814b20cef51549b56bfa57d3a287f653245096"
+
   # Use a fork that builds with modern hspec
   - github: "LeastAuthority/hspec-jenkins"
     commit: "7d2274461a395f9fa889890e14c6d758314b3af3"
-  - "base32-bytestring-0.2.1.0"
-  - "bits-extras-0.1.3"
+
   # Let us generate a Python client for the API.
   # Released version is a bit broken.
   - github: "LeastAuthority/servant-py"
@@ -79,3 +85,12 @@ extra-deps:
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
+allow-newer: true
+
+nix:
+  enable: true
+  packages:
+    # digest for zlib.h / libz.so
+    - "zlib"
+    # statvfs, for autoreconf
+    - "autoconf"

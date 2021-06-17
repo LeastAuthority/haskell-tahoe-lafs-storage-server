@@ -65,12 +65,12 @@ executable gbs-generate-apidocs
   hs-source-dirs:      generate-apidocs
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-                     , servant-docs >= 0.11 && < 0.12
-                     , servant-pandoc >= 0.5 && < 0.6
-                     , pandoc >= 2.5 && < 2.6
-                     , data-default >= 0.7 && < 0.8
-                     , blaze-html >= 0.9 && < 0.10
+  build-depends:       base
+                     , servant-docs
+                     , servant-pandoc
+                     , pandoc
+                     , data-default
+                     , blaze-html
                      , tahoe-lafs-storage-server
                      , text
 
@@ -78,7 +78,7 @@ executable tahoe-lafs-storage-server
   hs-source-dirs:      app
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base
                      , optparse-applicative
                      , tahoe-lafs-storage-server
                      , warp
@@ -87,7 +87,7 @@ executable gbs-generate-clients
   hs-source-dirs:      generate-clients
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base
                      , tahoe-lafs-storage-server
                      , servant-py
                      , servant-js
