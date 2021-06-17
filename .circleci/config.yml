@@ -32,6 +32,7 @@ jobs:
                 haskell-stack \
                 zlib1g-dev \
                 unzip \
+                autoconf
 
 
       - restore_cache:
