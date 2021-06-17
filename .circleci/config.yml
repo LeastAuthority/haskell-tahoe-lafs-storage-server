@@ -14,10 +14,6 @@ jobs:
     docker:
       - image: "ubuntu:18.04"
 
-    environment:
-      # Add /root/.local/bin to PATH so that the upgraded stack is preferred.
-      PATH: "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
     steps:
       - "checkout"
 
