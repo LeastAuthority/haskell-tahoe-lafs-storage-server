@@ -101,9 +101,7 @@ instance Backend MemoryBackend where
 
   getMutableShareNumbers backend storageIndex = do
     shares' <- readIORef $ mutableShares backend
-    return $ case lookup storageIndex shares' of
-      Nothing       -> []
-      Just shares'' -> keys shares''
+    return $ maybe [] keys $ lookup storageIndex shares'
 
   readvAndTestvAndWritev
     backend
@@ -152,9 +150,7 @@ instance Backend MemoryBackend where
 
   getImmutableShareNumbers backend storageIndex = do
     shares' <- readIORef $ immutableShares backend
-    return $ case lookup storageIndex shares' of
-      Nothing       -> []
-      Just shares'' -> keys shares''
+    return $ maybe [] keys $ lookup storageIndex shares'
 
   readImmutableShares backend storageIndex shareNumbers [] [] = do
     shares' <- readIORef $ immutableShares backend
