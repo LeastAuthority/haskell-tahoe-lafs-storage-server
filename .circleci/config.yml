@@ -20,7 +20,7 @@ jobs:
           command: |
             apt-get --quiet update
             apt-get --quiet --yes install \
-                git
+                git \
                 netbase \
                 haskell-stack \
                 zlib1g-dev \
