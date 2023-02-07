@@ -1,35 +1,35 @@
 module Main where
 
-import System.FilePath
-  ( FilePath
-  , (</>)
-  )
+import System.FilePath (
+    FilePath,
+    (</>),
+ )
 
-import Servant.JS
-  ( writeJSForAPI
-  , angular
-  , defAngularOptions
-  , vanillaJS
-  , jquery
-  )
+import Servant.JS (
+    angular,
+    defAngularOptions,
+    jquery,
+    vanillaJS,
+    writeJSForAPI,
+ )
 
-import Servant.PY
-  ( writePythonForAPI
-  , requests
-  , treq
-  )
+-- import Servant.PY
+--   ( writePythonForAPI
+--   , requests
+--   , treq
+--   )
 
-import TahoeLAFS.Storage.API
-  ( api
-  )
+import TahoeLAFS.Storage.API (
+    api,
+ )
 
 result :: FilePath
 result = "./"
 
 main :: IO ()
 main = do
-    writePythonForAPI api requests (result </> "requests_api.py")
-    writePythonForAPI api treq (result </> "treq_api.py")
+    -- writePythonForAPI api requests (result </> "requests_api.py")
+    -- writePythonForAPI api treq (result </> "treq_api.py")
 
     writeJSForAPI api (angular defAngularOptions) (result </> "angular_api.js")
     writeJSForAPI api vanillaJS (result </> "vanilla_api.js")
