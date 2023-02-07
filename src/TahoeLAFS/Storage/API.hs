@@ -30,6 +30,7 @@ module TahoeLAFS.Storage.API (
     ReadVector,
     TestVector (TestVector),
     ReadResult,
+    LeaseSecret,
     CorruptionDetails (CorruptionDetails),
     SlotSecrets (..),
     TestOperator (..),
@@ -45,6 +46,8 @@ import Prelude hiding (
     toInteger,
  )
 
+import Data.Word
+
 import Data.Text (
     pack,
     unpack,
@@ -53,9 +56,12 @@ import Data.Text.Encoding (
     decodeUtf8,
  )
 
+import Data.Bifunctor
 import Data.ByteString (
     ByteString,
  )
+
+import qualified Data.ByteString as BS
 import Data.Map.Strict (
     Map,
  )
@@ -79,6 +85,7 @@ import Data.Aeson.Types (
 import GHC.Generics (
     Generic,
  )
+
 import Servant (
     Capture,
     Get,
@@ -113,6 +120,9 @@ import Network.HTTP.Types (
 import TahoeLAFS.Internal.ServantUtil (
     CBOR,
  )
+
+import qualified Data.ByteString.Base64 as Base64
+import qualified Data.Text as B
 
 type PutCreated = Verb 'PUT 201
 
@@ -257,6 +267,23 @@ instance FromHttpApiData ByteRanges where
 instance ToHttpApiData ByteRanges where
     toHeader = renderByteRanges
 
+data LeaseSecret = Renew ByteString | Cancel ByteString
+
+instance FromHttpApiData LeaseSecret where
+    parseHeader bs =
+        do
+            let [key, val] = BS.split 32 bs
+            case key of
+                "lease-renew-secret" -> bimap pack Renew $ Base64.decode val
+                _ -> bimap pack Cancel $ Base64.decode val
+
+instance ToHttpApiData LeaseSecret where
+    toHeader (Renew bs) = "lease-renew-secret " <> Base64.encode bs
+    toHeader (Cancel bs) = "lease-cancel-secret " <> Base64.encode bs
+
+-- Renew <$ string "lease-renew-secret " <*> B64.decode bs
+-- <|> Cancel <$ string "lease-cancel-secret " <*> B64.decode bs
+
 type StorageAPI =
     -- General server information
 
@@ -264,6 +291,8 @@ type StorageAPI =
     -- GET /v1/version
     -- Retrieve information about the server version and behavior
     "v1" :> "version" :> Get '[CBOR, JSON] Version
+        -- PUT /storage/v1/lease/:storage_index
+        :<|> "v1" :> "lease" :> Capture "storage_index" StorageIndex :> Header "X-Tahoe-Authorization" [LeaseSecret] :> Get '[JSON] ()
         -- Immutable share interactions
 
         --

@@ -7,6 +7,7 @@ import TahoeLAFS.Storage.API (
     AllocationResult (..),
     ApplicationVersion,
     CorruptionDetails,
+    LeaseSecret,
     Offset,
     ReadResult,
     ShareData,
@@ -66,3 +67,6 @@ instance Backend NullBackend where
     readImmutableShares :: NullBackend -> StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> IO ReadResult
     readImmutableShares NullBackend _ _ _ _ =
         return mempty
+
+    renewLease :: NullBackend -> StorageIndex -> [LeaseSecret] -> IO ()
+    renewLease NullBackend _ _ = pure mempty

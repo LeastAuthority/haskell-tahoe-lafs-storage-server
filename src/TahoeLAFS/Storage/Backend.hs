@@ -21,6 +21,7 @@ import TahoeLAFS.Storage.API (
     AllocateBuckets,
     AllocationResult,
     CorruptionDetails,
+    LeaseSecret,
     Offset,
     ReadResult,
     ReadTestWriteResult (..),
@@ -65,6 +66,7 @@ class Backend b where
     readMutableShares :: b -> StorageIndex -> [ShareNumber] -> [Offset] -> [Size] -> IO ReadResult
     getMutableShareNumbers :: b -> StorageIndex -> IO [ShareNumber]
     adviseCorruptMutableShare :: b -> StorageIndex -> ShareNumber -> CorruptionDetails -> IO ()
+    renewLease :: b -> StorageIndex -> [LeaseSecret] -> IO ()
 
 writeMutableShare ::
     Backend b =>

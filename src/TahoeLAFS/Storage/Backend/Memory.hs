@@ -45,6 +45,7 @@ import TahoeLAFS.Storage.API (
     AllocateBuckets,
     AllocationResult (..),
     CorruptionDetails,
+    LeaseSecret,
     Offset,
     ReadResult,
     ReadTestWriteResult (..),
@@ -180,6 +181,9 @@ instance Backend MemoryBackend where
                 matches k _v = k `elem` shareNumbers
         return result
     readImmutableShares _ _ _ _ _ = error "readImmutableShares got bad input"
+
+    renewLease :: MemoryBackend -> StorageIndex -> [LeaseSecret] -> IO ()
+    renewLease _ _ _ = pure mempty -- XXX not even
 
 totalShareSize :: MemoryBackend -> IO Size
 totalShareSize backend = do
