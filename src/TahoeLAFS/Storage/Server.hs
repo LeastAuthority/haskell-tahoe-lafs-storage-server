@@ -17,7 +17,6 @@ import TahoeLAFS.Storage.API (
     AllocateBuckets,
     AllocationResult (..),
     CorruptionDetails,
-    LeaseSecret,
     Offset,
     ReadResult,
     ReadTestWriteResult (..),
@@ -106,10 +105,6 @@ getMutableShareNumbers backend storage_index =
 adviseCorruptMutableShare :: Backend.Backend b => b -> StorageIndex -> ShareNumber -> CorruptionDetails -> Handler ()
 adviseCorruptMutableShare backend storage_index share_number details =
     liftIO (Backend.adviseCorruptMutableShare backend storage_index share_number details)
-
-renewLease :: Backend.Backend b => b -> StorageIndex -> [LeaseSecret] -> Handler ()
-renewLease backend storage_index secrets =
-    liftIO (Backend.renewLease backend storage_index secrets)
 
 data MisconfiguredTLS = MisconfiguredTLS
     deriving (Show)

@@ -30,7 +30,6 @@ module TahoeLAFS.Storage.API (
     ReadVector,
     TestVector (TestVector),
     ReadResult,
-    LeaseSecret,
     CorruptionDetails (CorruptionDetails),
     SlotSecrets (..),
     TestOperator (..),
@@ -267,23 +266,6 @@ instance FromHttpApiData ByteRanges where
 instance ToHttpApiData ByteRanges where
     toHeader = renderByteRanges
 
-data LeaseSecret = Renew ByteString | Cancel ByteString
-
-instance FromHttpApiData LeaseSecret where
-    parseHeader bs =
-        do
-            let [key, val] = BS.split 32 bs
-            case key of
-                "lease-renew-secret" -> bimap pack Renew $ Base64.decode val
-                _ -> bimap pack Cancel $ Base64.decode val
-
-instance ToHttpApiData LeaseSecret where
-    toHeader (Renew bs) = "lease-renew-secret " <> Base64.encode bs
-    toHeader (Cancel bs) = "lease-cancel-secret " <> Base64.encode bs
-
--- Renew <$ string "lease-renew-secret " <*> B64.decode bs
--- <|> Cancel <$ string "lease-cancel-secret " <*> B64.decode bs
-
 type StorageAPI =
     -- General server information
 
@@ -292,7 +274,7 @@ type StorageAPI =
     -- Retrieve information about the server version and behavior
     "v1" :> "version" :> Get '[CBOR, JSON] Version
         -- PUT /storage/v1/lease/:storage_index
-        :<|> "v1" :> "lease" :> Capture "storage_index" StorageIndex :> Header "X-Tahoe-Authorization" [LeaseSecret] :> Get '[JSON] ()
+        -- :<|> "v1" :> "lease" :> Capture "storage_index" StorageIndex :> Header "X-Tahoe-Authorization" [LeaseSecret] :> Get '[JSON] ()
         -- Immutable share interactions
 
         --

@@ -68,7 +68,6 @@ import System.Directory (
 import TahoeLAFS.Storage.API (
     AllocateBuckets (..),
     AllocationResult (..),
-    LeaseSecret,
     Offset,
     ReadTestWriteResult (ReadTestWriteResult, readData, success),
     ReadTestWriteVectors (ReadTestWriteVectors),
@@ -185,8 +184,6 @@ instance Backend FilesystemBackend where
     createMutableStorageIndex = createImmutableStorageIndex
 
     getMutableShareNumbers = getImmutableShareNumbers
-    renewLease :: FilesystemBackend -> StorageIndex -> [LeaseSecret] -> IO ()
-    renewLease (FilesystemBackend root) _ _ = pure mempty
 
     readvAndTestvAndWritev
         (FilesystemBackend root)

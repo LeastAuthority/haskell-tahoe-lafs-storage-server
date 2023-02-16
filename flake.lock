@@ -31,9 +31,25 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1676283394,
+        "narHash": "sha256-XX2f9c3iySLCw54rJ/CZs+ZK6IQy7GXNY4nSOyu2QG4=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "3db36a8b464d0c4532ba1c7dda728f4576d6d073",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
+          "hs-flake-utils",
           "pre-commit-hooks",
           "nixpkgs"
         ]
@@ -52,18 +68,43 @@
         "type": "github"
       }
     },
+    "hs-flake-utils": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pre-commit-hooks": "pre-commit-hooks"
+      },
+      "locked": {
+        "lastModified": 1675349639,
+        "narHash": "sha256-ANScMVsF9DX9iklk5UjLC26qCSN9xGLQ1FpKLPideN0=",
+        "ref": "main",
+        "rev": "3cd8d5cf6b46d5496f92f710b9060a023798a2fa",
+        "revCount": 5,
+        "type": "git",
+        "url": "https://whetstone.private.storage/jcalderone/hs-flake-utils.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://whetstone.private.storage/jcalderone/hs-flake-utils.git"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1671548329,
-        "narHash": "sha256-OrC6R6zihRjFqdKFF3/vD3bkz44poONSII8ncre1Wh0=",
-        "owner": "NixOS",
+        "lastModified": 1676375384,
+        "narHash": "sha256-6HI3jZiuJX+KLz05cocYy2mBAWlISEKHU84ftYfxHZ8=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ba6ba2b90096dc49f448aa4d4d783b5081b1cc87",
+        "rev": "c43f676c938662072772339be6269226c77b51b8",
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
-        "type": "indirect"
+        "owner": "nixos",
+        "ref": "nixos-22.11",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "nixpkgs-stable": {
@@ -86,10 +127,12 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "flake-utils": [
+          "hs-flake-utils",
           "flake-utils"
         ],
         "gitignore": "gitignore",
         "nixpkgs": [
+          "hs-flake-utils",
           "nixpkgs"
         ],
         "nixpkgs-stable": "nixpkgs-stable"
@@ -111,8 +154,8 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "pre-commit-hooks": "pre-commit-hooks"
+        "hs-flake-utils": "hs-flake-utils",
+        "nixpkgs": "nixpkgs"
       }
     }
   },

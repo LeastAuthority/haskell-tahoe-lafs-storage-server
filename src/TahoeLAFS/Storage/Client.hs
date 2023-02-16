@@ -10,7 +10,6 @@ module TahoeLAFS.Storage.Client (
     readMutableShares,
     getMutableShareNumbers,
     adviseCorruptMutableShare,
-    renewLease,
 ) where
 
 import Servant (
@@ -25,7 +24,6 @@ import TahoeLAFS.Storage.API (
  )
 
 ( version
-        :<|> renewLease
         :<|> createImmutableStorageIndex
         :<|> writeImmutableShare
         :<|> adviseCorruptImmutableShare
