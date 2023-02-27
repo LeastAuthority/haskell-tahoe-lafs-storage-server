@@ -1,123 +1,167 @@
-name:                tahoe-lafs-storage-server
-version:             0.1.0.0
-synopsis:            A Tahoe-LAFS Storage Server
+cabal-version:      3.0
+name:               tahoe-lafs-storage-server
+version:            0.1.0.0
+build-type:         Simple
 
-description:         This package implements a storage server for Tahoe-LAFS.
-                     It implements the recently proposed "Great Black Swamp"
-                     protocol and not the original Foolscap-based protocol.
+common common-opts
+  default-extensions:
+    GADTs
+    ImportQualifiedPost
+    InstanceSigs
+    LambdaCase
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedStrings
+    RecordWildCards
+    ScopedTypeVariables
+    StrictData
+    TupleSections
+    TypeApplications
 
-homepage:            https://github.com/LeastAuthority/tahoe-lafs-storage-server#readme
-license:             BSD3
-license-file:        LICENSE
-author:              Least Authority TFA GmbH
-maintainer:          jean-paul@leastauthority.com
-copyright:           BSD3
-category:            Cryptography
-                   , Distributed Computing
-                   , Filesystem
-                   , Network
-                   , Network APIs
-                   , Security
-                   , Service
-                   , Storage
-                   , Web
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.rst
+  ghc-options:        -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+    , aeson
+    , async
+    , base
+    , binary
+    , bytestring
+    , containers
+    , deriving-aeson
+    , directory
+    , filepath
+    , foldl
+    , http-types
+    , primitive
+    , safe-exceptions
+    , text
+    , unordered-containers
+    , vector
+
+  -- Codecs
+  -- Parallelism
+  -- Mutability
+  -- Binary
+  -- Containers
+  -- Utilities
+  -- the actual app
+
+  default-language:   Haskell2010
+
+synopsis:           A Tahoe-LAFS Storage Server
+description:
+  This package implements a storage server for Tahoe-LAFS.
+  It implements the recently proposed "Great Black Swamp"
+  protocol and not the original Foolscap-based protocol.
+
+homepage:
+  https://github.com/LeastAuthority/tahoe-lafs-storage-server#readme
+
+license:            BSD3
+license-file:       LICENSE
+author:             Least Authority TFA GmbH
+maintainer:         jean-paul@leastauthority.com
+copyright:          BSD3
+category:
+  Cryptography
+  , Distributed Computing
+  , Filesystem
+  , Network
+  , Network APIs
+  , Security
+  , Service
+  , Storage
+  , Web
+
+extra-source-files: README.rst
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     TahoeLAFS.Storage.API
-                     , TahoeLAFS.Storage.APIDocs
-                     , TahoeLAFS.Storage.Backend
-                     , TahoeLAFS.Storage.Backend.Null
-                     , TahoeLAFS.Storage.Backend.Memory
-                     , TahoeLAFS.Storage.Backend.Filesystem
-                     , TahoeLAFS.Storage.Server
-                     , TahoeLAFS.Storage.Client
-  other-modules:       TahoeLAFS.Internal.ServantUtil
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-                     , containers
-                     , bytestring
-                     , scientific
-                     , base64-bytestring
-                     , text
-                     , utf8-string
-                     , filepath
-                     , directory
-                     , aeson
-                     , cborg
-                     , cborg-json
-                     , http-media
-                     , serialise
-                     , http-api-data
-                     , http-types
-                     , servant-docs
-                     , servant-server
-                     , servant-client
-                     , wai
-                     , warp
-                     , warp-tls
-                     , statvfs
+  import:           common-opts
+  hs-source-dirs:   src
+  exposed-modules:
+    TahoeLAFS.Storage.API
+    TahoeLAFS.Storage.APIDocs
+    TahoeLAFS.Storage.Backend
+    TahoeLAFS.Storage.Backend.Filesystem
+    TahoeLAFS.Storage.Backend.Memory
+    TahoeLAFS.Storage.Backend.Null
+    TahoeLAFS.Storage.Client
+    TahoeLAFS.Storage.Server
 
-executable gbs-generate-apidocs
-  hs-source-dirs:      generate-apidocs
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base
-                     , servant-docs
-                     , servant-pandoc
-                     , pandoc
-                     , data-default
-                     , blaze-html
-                     , tahoe-lafs-storage-server
-                     , text
+  other-modules:    TahoeLAFS.Internal.ServantUtil
+  default-language: Haskell2010
+  build-depends:
+    , base               >=4.7 && <5
+    , base64-bytestring
+    , cborg
+    , cborg-json
+    , http-api-data
+    , http-media
+    , scientific
+    , serialise
+    , servant-client
+    , servant-docs
+    , servant-server
+    , statvfs
+    , utf8-string
+    , wai
+    , warp
+    , warp-tls
+
+-- executable gbs-generate-apidocs
+--   hs-source-dirs:      generate-apidocs
+--   main-is:             Main.hs
+--   default-language:    Haskell2010
+--   build-depends:       base
+--                      , servant-docs
+--                      , pandoc
+--                      , data-default
+--                      , blaze-html
+--                      , tahoe-lafs-storage-server
+--                      , text
 
 executable tahoe-lafs-storage-server
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base
-                     , optparse-applicative
-                     , tahoe-lafs-storage-server
-                     , warp
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  default-language: Haskell2010
+  build-depends:
+    , base
+    , optparse-applicative
+    , tahoe-lafs-storage-server
+    , warp
 
 executable gbs-generate-clients
-  hs-source-dirs:      generate-clients
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base
-                     , tahoe-lafs-storage-server
-                     , servant-py
-                     , servant-js
-                     , filepath
+  hs-source-dirs:   generate-clients
+  main-is:          Main.hs
+  default-language: Haskell2010
+  build-depends:
+    , base
+    , filepath
+    , servant-js
+    , tahoe-lafs-storage-server
 
 test-suite http-tests
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Main.hs
-  other-modules:       Lib
-                     , Spec
-                     , HTTPSpec
-                     , SemanticSpec
-                     , MiscSpec
-  default-language:    Haskell2010
-  build-depends:       base
-                     , bytestring
-                     , base32string
-                     , text
-                     , containers
-                     , vector
-                     , directory
-                     , temporary
-                     , hspec
-                     , hspec-expectations
-                     , hspec-wai
-                     , QuickCheck
-                     , quickcheck-instances
-                     , hspec-jenkins-lae
-                     , wai-extra
-                     , http-types
-                     , aeson
-                     , tahoe-lafs-storage-server
+  import:           common-opts
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  other-modules:
+    HTTPSpec
+    Lib
+    MiscSpec
+    SemanticSpec
+    Spec
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  build-depends:
+    , base
+    , base32string
+    , hspec
+    , hspec-expectations
+    , hspec-wai
+    , QuickCheck
+    , quickcheck-instances
+    , tahoe-lafs-storage-server
+    , temporary
+    , vector
+    , wai-extra

@@ -1,66 +1,59 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lib
-  ( gen10String
-  , genStorageIndex
-  , positiveIntegers
-  , b32encode
-  , b32decode
-  ) where
+module Lib (
+    gen10String,
+    genStorageIndex,
+    positiveIntegers,
+    b32encode,
+    b32decode,
+) where
 
-import Data.Word
-  ( Word8
-  )
+import Data.Word (
+    Word8,
+ )
 
 import qualified Data.Base32String as Base32
 
-import Data.ByteString
-  ( ByteString
-  , pack
-  )
-
-import Data.ByteString.Char8
-  ( unpack
-  )
+import Data.ByteString (
+    ByteString,
+    pack,
+ )
 
 import qualified Data.Text as Text
 
-import Test.QuickCheck
-  ( Property
-  , Arbitrary(arbitrary)
-  , Gen
-  , forAll
-  , suchThatMap
-  , vectorOf
-  , property
-  )
+import Test.QuickCheck (
+    Arbitrary (arbitrary),
+    Gen,
+    suchThatMap,
+    vectorOf,
+ )
 
 -- Get the Arbitrary ByteString instance.
 import Test.QuickCheck.Instances.ByteString ()
 
-import TahoeLAFS.Storage.API
-  ( StorageIndex
-  , ShareNumber
-  , shareNumber
-  )
+import TahoeLAFS.Storage.API (
+    ShareNumber,
+    StorageIndex,
+    shareNumber,
+ )
 
 gen10String :: Gen String
 gen10String = vectorOf 10 arbitrary
 
 gen10ByteString :: Gen ByteString
 gen10ByteString =
-  suchThatMap (vectorOf 10 (arbitrary :: Gen Word8)) (Just . pack)
+    suchThatMap (vectorOf 10 (arbitrary :: Gen Word8)) (Just . pack)
 
 genStorageIndex :: Gen StorageIndex
 genStorageIndex =
-  suchThatMap gen10ByteString (Just . b32encode)
+    suchThatMap gen10ByteString (Just . b32encode)
 
 positiveIntegers :: Gen Integer
 positiveIntegers =
-  suchThatMap (arbitrary :: Gen Integer) (\i -> Just $ abs i)
+    suchThatMap (arbitrary :: Gen Integer) (Just . abs)
 
 instance Arbitrary ShareNumber where
-  arbitrary = suchThatMap positiveIntegers (\i -> shareNumber i)
+    arbitrary = suchThatMap positiveIntegers shareNumber
 
 b32table :: ByteString
 b32table = "abcdefghijklmnopqrstuvwxyz234567"
@@ -70,4 +63,4 @@ b32encode = Text.unpack . Base32.toText . Base32.fromBytes b32table
 
 b32decode :: String -> ByteString
 b32decode base32 =
-  Base32.toBytes b32table $ Base32.fromText b32table $ Text.pack base32
+    Base32.toBytes b32table $ Base32.fromText b32table $ Text.pack base32
