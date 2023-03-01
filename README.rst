@@ -1,6 +1,8 @@
 Tahoe-LAFS Storage Server
 =========================
 
+**Note** This project `has moved <https://whetstone.private.storage/privatestorage/tahoe-great-black-swamp>`_.
+
 .. image:: https://circleci.com/gh/LeastAuthority/haskell-tahoe-lafs-storage-server.svg?style=svg
    :target: https://circleci.com/gh/LeastAuthority/haskell-tahoe-lafs-storage-server
 
